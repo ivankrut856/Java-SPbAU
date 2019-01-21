@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HashTableTest {
 
-    HashTable table;
+    private HashTable table;
 
     @BeforeEach
     void initializeEmptyHashTable() {
@@ -57,6 +57,20 @@ class HashTableTest {
         table.put("Test1", "A");
         assertEquals("A", table.remove("Test1"));
         assertFalse(table.contains("Test1"));
+    }
+
+    @Test
+    void test100PutRemovePut100Remove() {
+        for (int i = 0; i < 100; i++) {
+            table.put("Test" + i, String.valueOf(i));
+            table.remove("Test" + i);
+            table.put("Test" + i, String.valueOf(i));
+            assertEquals(String.valueOf(i), table.get("Test" + i));
+        }
+        for (int i = 0; i < 100; i++) {
+            table.remove("Test" + i);
+            assertFalse(table.contains("Test" + i));
+        }
     }
 
     @Test

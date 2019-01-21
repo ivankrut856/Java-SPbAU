@@ -11,6 +11,7 @@ class ListTest {
     void testEmptyListContainsNothing() {
         List list = new List();
         assertFalse(list.contains("Test1"));
+        assertNull(list.get("Test1"));
         assertFalse(list.contains(""));
         assertFalse(list.contains("??"));
         assertEquals(0, list.getSize());
