@@ -7,16 +7,14 @@ import java.util.Arrays;
  */
 public class List {
     /** Actual size of list */
-    private int size;
+    private int size = 0;
     /** Allocated space for elements (in elements) */
-    private int capacity;
+    private int capacity = 2;
 
     private MapEntry[] data;
 
     /** Constructs empty list with additional space for 2 more elements */
     public List() {
-        size = 0;
-        capacity = 2;
         data = new MapEntry[capacity];
         for (int i = 0; i < capacity; i++) {
             data[i] = new MapEntry(null, null);
@@ -122,4 +120,15 @@ public class List {
     public MapEntry[] getData() {
         return Arrays.copyOf(data, size);
     }
+
+    /** Key-value pair class */
+    class MapEntry {
+        public MapEntry(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+        public String key;
+        public String value;
+    }
+
 }
