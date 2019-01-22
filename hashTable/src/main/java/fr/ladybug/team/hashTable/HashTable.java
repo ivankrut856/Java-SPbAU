@@ -11,7 +11,7 @@ public class HashTable {
     private final int MAXIMAL_DENSITY = 2;
     /** A number representing the factor of hash-space expansion */
     private final int EXPAND_FACTOR = 2;
-    private int size;
+    private int size = 0;
     private List[] lists;
 
     private static int mod(int x, int y)
@@ -26,7 +26,6 @@ public class HashTable {
 
     /** Constructs empty table with certain initial space */
     public HashTable() {
-        size = 0;
         lists = new List[INITIAL_SPACE];
         for (int i = 0; i < INITIAL_SPACE; i++) {
             lists[i] = new List();
@@ -35,17 +34,14 @@ public class HashTable {
 
     /** In case of high density expands hash-space */
     private void rebuild() {
-        var elements = new MapEntry[lists.length][];
-        for (int i = 0; i < lists.length; i++) {
-            elements[i] = lists[i].getData();
-        }
+        List[] oldLists = lists;
         lists = new List[lists.length * EXPAND_FACTOR];
         for (int i = 0; i < lists.length; i++) {
             lists[i] = new List();
         }
-        for (MapEntry[] element : elements) {
-            for (MapEntry mapEntry : element) {
-                put(mapEntry.key, mapEntry.value);
+        for (List list : oldLists) {
+            for (MapEntry element : list.getData()) {
+                put(element.key, element.value);
             }
         }
     }
@@ -107,10 +103,11 @@ public class HashTable {
         return res;
     }
 
-    /** Removes all elements from the table */
+    /** Removes all elements from the table, shrink to minimal size */
     public void clear() {
         size = 0;
-        for (int i = 0; i < lists.length; i++) {
+        lists = new List[INITIAL_SPACE];
+        for (int i = 0; i < INITIAL_SPACE; i++) {
             lists[i] = new List();
         }
     }
