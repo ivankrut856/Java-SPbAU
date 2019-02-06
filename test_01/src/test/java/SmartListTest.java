@@ -152,6 +152,19 @@ public class SmartListTest {
            List<Object> list = new SmartList<>();
            list.remove(4);
         });
+
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            List<Object> list = new SmartList<>();
+            list.add(4, 4);
+        });
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            List<Object> list = new SmartList<>();
+            list.set(4, 4);
+        });
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            List<Object> list = new SmartList<>();
+            list.get(4);
+        });
     }
 
 

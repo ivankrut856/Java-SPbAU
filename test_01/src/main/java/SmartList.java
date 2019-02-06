@@ -32,12 +32,11 @@ public class SmartList<E> extends AbstractList<E> implements List<E> {
     /**
      * Returns element from the list by index
      * @param index the index on which element is returned
-     * @return element by index
      * @throws IndexOutOfBoundsException in case of {@code index < 0 or index > size}
      */
     public E get(int index) {
         if (index < 0 || index > size)
-            throw new NoSuchElementException();
+            throw new IndexOutOfBoundsException();
 
         if (size == 1)
             return (E)data;
