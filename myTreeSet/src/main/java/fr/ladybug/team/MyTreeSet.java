@@ -29,7 +29,7 @@ public class MyTreeSet<T> extends AbstractSet<T> {
             return this;
         }
 
-        private TreeNode last() {
+        private @NotNull TreeNode last() {
             if (right != null) {
                 return right.last();
             }
@@ -65,7 +65,7 @@ public class MyTreeSet<T> extends AbstractSet<T> {
                 current = candidate;
                 candidate = current.parent;
             }
-            return this;
+            return null;
         }
 
     }
@@ -93,6 +93,7 @@ public class MyTreeSet<T> extends AbstractSet<T> {
     public @NotNull MyTreeSet<T> descendingSet() {
         var copySet = new MyTreeSet<T>(comparator);
         copySet.root = root;
+        copySet.size = size;
         copySet.descendingComparision = !descendingComparision;
         return copySet;
     }
@@ -151,9 +152,10 @@ public class MyTreeSet<T> extends AbstractSet<T> {
                 result = comparator.compare(startNode.value, element);
             }
 
-            if (descendingComparision) {
-                result = -result;
-            }
+//            Not actually right, saved for history
+//            if (descendingComparision) {
+//                result = -result;
+//            }
 
             if (result == 0) {
                 return false;

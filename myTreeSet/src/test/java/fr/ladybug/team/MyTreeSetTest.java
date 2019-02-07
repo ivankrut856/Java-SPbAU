@@ -2,10 +2,9 @@ package fr.ladybug.team;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.util.CollectionUtils;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.TreeSet;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -71,13 +70,14 @@ class MyTreeSetTest {
     @Test
     void testDescendingStuff() {
         int testSize = 17;
-        String[] toTest = new String[testSize];
+        ArrayList<String> toTest = new ArrayList<>();
         for (int i = 0; i < testSize; i++) {
-            toTest[i] = String.valueOf(i);
+            toTest.add(String.valueOf(i));
         }
-        basic.addAll(Arrays.asList(toTest));
-        Arrays.sort(toTest);
-        assertEquals(Arrays.asList(toTest), basic.descendingSet());
+        basic.addAll(toTest);
+        Collections.sort(toTest, String::compareTo);
+        Collections.reverse(toTest);
+        assertEquals(toTest, Arrays.asList(basic.descendingSet().toArray()));
     }
 
 }
