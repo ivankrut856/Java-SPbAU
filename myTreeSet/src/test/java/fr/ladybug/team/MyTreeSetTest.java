@@ -75,9 +75,44 @@ class MyTreeSetTest {
             toTest.add(String.valueOf(i));
         }
         basic.addAll(toTest);
-        Collections.sort(toTest, String::compareTo);
+        toTest.sort(String::compareTo);
         Collections.reverse(toTest);
         assertEquals(toTest, Arrays.asList(basic.descendingSet().toArray()));
+    }
+
+    @Test
+    void testBinaryWaydown() {
+        basic.add("1");
+        basic.add("2");
+        basic.add("3");
+        basic.add("4");
+        basic.add("5");
+        assertEquals("2", basic.lower("3"));
+        assertEquals("4", basic.descendingSet().lower("3"));
+
+        assertEquals("4", basic.higher("3"));
+        assertEquals("2", basic.descendingSet().higher("3"));
+
+        assertEquals("3", basic.ceiling("3"));
+        assertEquals("3", basic.descendingSet().ceiling("3"));
+
+        assertEquals("3", basic.floor("3"));
+        assertEquals("3", basic.descendingSet().floor("3"));
+
+
+    }
+
+    @Test
+    void testFirstLast() {
+        basic.add("1");
+        basic.add("2");
+        basic.add("3");
+        basic.add("4");
+        basic.add("5");
+        assertEquals("1", basic.first());
+        assertEquals("5", basic.last());
+        assertEquals("5", basic.descendingSet().first());
+        assertEquals("1", basic.descendingSet().last());
     }
 
 }
