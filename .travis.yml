@@ -1,0 +1,6 @@
+before_script: cd trie
+
+language: java
+
+jdk:
+ - oraclejdk11
