@@ -1,1 +1,3 @@
+before_script: cd hashTable
+
 language: java
