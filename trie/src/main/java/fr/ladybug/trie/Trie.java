@@ -9,10 +9,10 @@ import java.util.Set;
 /** Trie -- Classical data structure */
 public class Trie implements Serializable {
     /** Root of inner tree representation*/
-    private TrieNode headNode;
+    private TrieNode headNode = new TrieNode();
 
     public Trie() {
-        headNode = new TrieNode();
+
     }
 
     /**
@@ -98,30 +98,6 @@ public class Trie implements Serializable {
         return currentNode.endingsCount + currentNode.passingThrough;
     }
 
-    private void print(PrintStream writer, TrieNode trieNode, int numberShift) {
-        int numberShiftCopy = numberShift;
-        for (Map.Entry<Character, TrieNode> entry : trieNode.links.entrySet()) {
-            print(writer, entry.getValue(), numberShift);
-            numberShift += entry.getValue().passingThrough + entry.getValue().endingsCount;
-        }
-        writer.print(numberShift);
-        writer.print(' ');
-        writer.print(trieNode.endingsCount);
-        writer.print(' ');
-        writer.print(trieNode.passingThrough);
-        writer.print(' ');
-        writer.print(trieNode.links.size());
-        writer.print('\n');
-        for (Map.Entry<Character, TrieNode> entry : trieNode.links.entrySet()) {
-            writer.print(entry.getKey());
-            writer.print(' ');
-            writer.print(numberShiftCopy);
-            writer.print(' ');
-            numberShiftCopy += entry.getValue().passingThrough + entry.getValue().endingsCount;
-        }
-        writer.print('\n');
-    }
-
     /** Serialization based on headNode serialization */
     @Override
     public void serialize(OutputStream out) throws IOException {
@@ -139,14 +115,13 @@ public class Trie implements Serializable {
      */
     private class TrieNode implements Serializable {
         /** Links to another nodes by character */
-        private HashMap<Character, TrieNode> links;
+        private HashMap<Character, TrieNode> links = new HashMap<>();
         /** How many elements have end at this node */
         private int endingsCount = 0;
         /** How many elements have end below (at the children of) this node */
         private int passingThrough = 0;
 
         private TrieNode() {
-            links = new HashMap<>();
         }
 
         /** Checks whether the node has link by this character */
@@ -166,7 +141,7 @@ public class Trie implements Serializable {
         /** Field-wise serialization */
         @Override
         public void serialize(OutputStream out) throws IOException {
-            DataOutputStream stream = new DataOutputStream(out);
+            var stream = new DataOutputStream(out);
             serializeIntoDataStream(stream);
         }
 
@@ -175,7 +150,7 @@ public class Trie implements Serializable {
             stream.writeInt(endingsCount);
             stream.writeInt(passingThrough);
             stream.writeInt(links.size());
-            for (Map.Entry<Character, TrieNode> entry : links.entrySet()) {
+            for (var entry : links.entrySet()) {
                 stream.writeChar(entry.getKey());
                 entry.getValue().serializeIntoDataStream(stream);
             }
@@ -184,15 +159,21 @@ public class Trie implements Serializable {
         /** Field-wise deserialization */
         @Override
         public void deserialize(InputStream in) throws IOException {
-            DataInputStream stream = new DataInputStream(in);
+            var stream = new DataInputStream(in);
             deserializeFromDataStream(stream);
         }
 
         /** Serialization helper */
         private void deserializeFromDataStream(DataInputStream stream) throws IOException {
             endingsCount = stream.readInt();
+            if (endingsCount < 0)
+                throw new StreamCorruptedException("Endings count cannot be negative. Stream corrupted");
             passingThrough = stream.readInt();
+            if (passingThrough < 0)
+                throw new StreamCorruptedException("Passing through count cannot be negative. Stream corrupted");
             int linksSize = stream.readInt();
+            if (linksSize < 0)
+                throw new StreamCorruptedException("Size of links collection cannot be negative. Stream corrupted");
             links = new HashMap<>();
             for (int i = 0; i < linksSize; i++) {
                 char currentKey = stream.readChar();
@@ -203,3 +184,4 @@ public class Trie implements Serializable {
         }
     }
 }
+

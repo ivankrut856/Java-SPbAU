@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,37 +13,91 @@ class TrieTest {
 
     Trie trie;
 
-    @Disabled
+    @BeforeEach
+    void initializeTrie() {
+        trie = new Trie();
+    }
+
     @Test
-    void manualTestSerialize() {
-        var file = new File("test1.subl");
-//        trie.add("B");
-//        trie.add("A");
+    void testNoRoomForDataException() {
         trie.add("");
         trie.add("Hello");
         trie.add("Hello_ultimate");
         trie.add("Rumba");
-        try (var output = new FileOutputStream(file)) {
-            trie.serialize(output);
+        try {
+            FileOutputStream closedStream = new FileOutputStream("hey");
+            closedStream.close();
+            assertThrows(IOException.class, () -> trie.serialize(closedStream));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    void testSerializeDeserializeEqualsId() {
+        var result = new ByteArrayOutputStream();
+        trie.add("");
+        trie.add("Hello");
+        trie.add("Hello_ultimate");
+        trie.add("Rumba");
+        assertDoesNotThrow(() -> trie.serialize(result));
 
         trie = new Trie();
-        try (var input = new FileInputStream("test1.subl")) {
-            trie.deserialize(input);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        assertDoesNotThrow(() -> trie.deserialize(new ByteArrayInputStream(result.toByteArray())));
+
         assertTrue(trie.contains(""));
         assertTrue(trie.contains("Hello"));
         assertTrue(trie.contains("Hello_ultimate"));
         assertTrue(trie.contains("Rumba"));
     }
 
-    @BeforeEach
-    void initializeTrie() {
-        trie = new Trie();
+    @Test
+    void testSerializeEmpty() {
+        var result = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> trie.serialize(result));
+
+        var expected = new ByteArrayOutputStream();
+        var dataExpected = new DataOutputStream(expected);
+        assertDoesNotThrow(() -> dataExpected.writeInt(0));
+        assertDoesNotThrow(() -> dataExpected.writeInt(0));
+        assertDoesNotThrow(() -> dataExpected.writeInt(0));
+
+        assertArrayEquals(expected.toByteArray(), result.toByteArray());
+    }
+
+    @Test
+    void testDeserializeFromEmpty() {
+        assertThrows(IOException.class, () -> trie.deserialize(new ByteArrayInputStream(new byte[0])));
+    }
+
+    @Test
+    void testDeserializeCorrupted() {
+        var corrupted1 = new ByteArrayOutputStream();
+        var dataCorrupted1 = new DataOutputStream(corrupted1);
+        assertDoesNotThrow(() -> dataCorrupted1.writeInt(-1));
+        assertDoesNotThrow(() -> dataCorrupted1.writeInt(0));
+        assertDoesNotThrow(() -> dataCorrupted1.writeInt(0));
+
+
+        var corrupted2 = new ByteArrayOutputStream();
+        var dataCorrupted2 = new DataOutputStream(corrupted2);
+        assertDoesNotThrow(() -> dataCorrupted2.writeInt(0));
+        assertDoesNotThrow(() -> dataCorrupted2.writeInt(-1));
+        assertDoesNotThrow(() -> dataCorrupted2.writeInt(0));
+
+
+        var corrupted3 = new ByteArrayOutputStream();
+        var dataCorrupted3 = new DataOutputStream(corrupted3);
+        assertDoesNotThrow(() -> dataCorrupted3.writeInt(0));
+        assertDoesNotThrow(() -> dataCorrupted3.writeInt(0));
+        assertDoesNotThrow(() -> dataCorrupted3.writeInt(-1));
+
+        assertThrows(StreamCorruptedException.class, () ->
+                trie.deserialize(new ByteArrayInputStream(corrupted1.toByteArray())));
+        assertThrows(StreamCorruptedException.class, () ->
+                trie.deserialize(new ByteArrayInputStream(corrupted2.toByteArray())));
+        assertThrows(StreamCorruptedException.class, () ->
+                trie.deserialize(new ByteArrayInputStream(corrupted3.toByteArray())));
     }
 
     @Test
