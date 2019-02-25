@@ -39,7 +39,7 @@ public class Phonebook {
 
         morphia = new Morphia();
         morphia.mapPackage("fr.ladybug.team.mapping");
-        datastore = morphia.createDatastore(new MongoClient(), dbName);
+        datastore = morphia.createDatastore(new MongoClient("localhost", 27017), dbName);
         datastore.ensureIndexes();
     }
 
