@@ -1,1 +1,6 @@
+before_script: cd db
+
 language: java
+
+jdk:
+ - oraclejdk11
