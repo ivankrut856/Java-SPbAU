@@ -169,6 +169,13 @@ public class MyTreeSetImpl<T> extends AbstractSet<T> implements MyTreeSet<T> {
      */
     @Override
     public boolean add(@NotNull T element) throws IllegalArgumentException {
+        //noinspection ConstantConditions
+        if (element == null) {
+            // Important! In runtime @NotNull does not work hence 'if' presented. Do not delete nor complain
+            throw new IllegalArgumentException("Element cannot be null");
+        }
+
+
         if (root == null) {
             root = new TreeNode(element);
 
