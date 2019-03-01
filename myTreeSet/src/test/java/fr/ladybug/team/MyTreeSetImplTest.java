@@ -2,28 +2,49 @@ package fr.ladybug.team;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.util.CollectionUtils;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MyTreeSetTest {
+class MyTreeSetImplTest {
 
-    MyTreeSet<String> basic, advanced;
+    private MyTreeSetImpl<String> basic, advanced;
     @BeforeEach
-    void SetsInitialise() {
-        basic = new MyTreeSet<>();
-        advanced = new MyTreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    void setsInitialise() {
+        basic = new MyTreeSetImpl<>();
+        advanced = new MyTreeSetImpl<>(String.CASE_INSENSITIVE_ORDER);
     }
 
+    @SuppressWarnings("EmptyMethod")
     @Test
     void testSetInitialiseNoExcept() {
     }
 
     @Test
-    void testIteratorInitializeNoExcept() {
-        Iterator<String> it = basic.iterator();
+    void testIteratorsInitializeNoExcept() {
+        Iterator<String> iterator = basic.iterator();
+        Iterator<String> descendingIterator = basic.descendingIterator();
+    }
+
+    @Test
+    void testActualReverseIterating() {
+        basic.add("1");
+        basic.add("2");
+        basic.add("3");
+        basic.add("4");
+        basic.add("5");
+
+        final String[] variations = {"", ""};
+        basic.iterator().forEachRemaining(x -> variations[0] += x);
+        basic.descendingIterator().forEachRemaining(x -> variations[1] += x);
+
+        assertEquals(variations[0].length(), variations[1].length());
+        for (int i = 0; i < variations[0].length(); i++) {
+            assertEquals(variations[0].charAt(i), variations[1].charAt(variations[0].length() - i - 1));
+        }
     }
 
     @Test
@@ -98,8 +119,6 @@ class MyTreeSetTest {
 
         assertEquals("3", basic.floor("3"));
         assertEquals("3", basic.descendingSet().floor("3"));
-
-
     }
 
     @Test
@@ -115,4 +134,34 @@ class MyTreeSetTest {
         assertEquals("1", basic.descendingSet().last());
     }
 
+    @Test
+    void testAddNull() {
+        assertThrows(IllegalArgumentException.class, () -> basic.add(null));
+    }
+
+    @Test
+    void testEmptySetFirstLast() {
+        assertNull(basic.last());
+        assertNull(basic.first());
+    }
+
+    @Test
+    void testWrongIteratorRemoving() {
+        Iterator<String> it = basic.iterator();
+        assertThrows(IllegalStateException.class, it::remove);
+    }
+
+    @Test
+    void testIteratorNextAfterEnd() {
+        basic.add("1");
+        basic.add("2");
+        basic.add("3");
+        basic.add("4");
+        basic.add("5");
+        Iterator<String> it = basic.iterator();
+        it.forEachRemaining(s -> {
+        });
+
+        assertThrows(NoSuchElementException.class, it::next);
+    }
 }
