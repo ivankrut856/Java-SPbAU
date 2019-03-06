@@ -36,4 +36,11 @@ public class InjectorTest {
             Injector.initialize(TestClass5.class.getName(), Arrays.asList(TestClass5.class, TestClass6.class));
         });
     }
+
+    @Test
+    void testMultipleDeps() {
+        assertThrows(AmbiguousImplementationException.class, () -> {
+            Injector.initialize(TestClass4.class.getName(), Arrays.asList(TestClass3.class, TestClass7.class));
+        });
+    }
 }
