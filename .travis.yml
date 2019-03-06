@@ -1,1 +1,6 @@
+before_script: cd injector
+
 language: java
+
+jdk:
+ - oraclejdk11
