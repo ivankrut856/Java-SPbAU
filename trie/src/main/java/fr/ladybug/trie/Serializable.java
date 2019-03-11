@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-/**
- * Simple serialization interface
- */
+/** Simple serialization interface */
 public interface Serializable {
     /**
      * Method writes serializable object into the output stream

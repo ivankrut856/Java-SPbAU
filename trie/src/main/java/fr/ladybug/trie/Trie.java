@@ -1,5 +1,7 @@
 package fr.ladybug.trie;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,16 +13,12 @@ public class Trie implements Serializable {
     /** Root of inner tree representation*/
     private TrieNode headNode = new TrieNode();
 
-    public Trie() {
-
-    }
-
     /**
      * Method adds new element into the trie. Linear time
      * @param element the element to add to the trie
      * @return true if element already presented, false otherwise
      */
-    public boolean add(String element) {
+    public boolean add(@NotNull String element) {
         int currentPosition = 0;
         TrieNode currentNode = headNode;
         while (currentPosition < element.length()) {
@@ -39,7 +37,7 @@ public class Trie implements Serializable {
      * @param element the element which presence it checks
      * @return true if element presented in the trie, false otherwise
      */
-    public boolean contains(String element) {
+    public boolean contains(@NotNull String element) {
         int currentPosition = 0;
         TrieNode currentNode = headNode;
         while (currentPosition < element.length()) {
@@ -57,7 +55,7 @@ public class Trie implements Serializable {
      * @param element the element which is to be removed
      * @return true if element was presented before removal, false otherwise
      */
-    public boolean remove(String element) {
+    public boolean remove(@NotNull String element) {
         if (!contains(element)) {
             return false;
         }
@@ -85,7 +83,7 @@ public class Trie implements Serializable {
      * @param prefix the prefix which is to be prefix of counted element
      * @return the number of elements with the prefix
      */
-    public int howManyStartWithPrefix(String prefix) {
+    public int howManyStartWithPrefix(@NotNull String prefix) {
         int currentPosition = 0;
         TrieNode currentNode = headNode;
         while (currentPosition < prefix.length()) {
@@ -100,13 +98,13 @@ public class Trie implements Serializable {
 
     /** Serialization based on headNode serialization */
     @Override
-    public void serialize(OutputStream out) throws IOException {
+    public void serialize(@NotNull OutputStream out) throws IOException {
         headNode.serialize(out);
     }
 
     /** Deserialization based on headNode deserialization */
     @Override
-    public void deserialize(InputStream in) throws IOException {
+    public void deserialize(@NotNull InputStream in) throws IOException {
         headNode.deserialize(in);
     }
 
@@ -121,16 +119,13 @@ public class Trie implements Serializable {
         /** How many elements have end below (at the children of) this node */
         private int passingThrough = 0;
 
-        private TrieNode() {
-        }
-
         /** Checks whether the node has link by this character */
         private boolean canGo(char c) {
             return links.containsKey(c);
         }
 
         /** If the link by certain character exists then returns endpoint of the link, otherwise creates them first */
-        private TrieNode forceGo(char c) {
+        private @NotNull TrieNode forceGo(char c) {
             if (links.containsKey(c))
                 return links.get(c);
             var newNode = new TrieNode();
@@ -140,13 +135,13 @@ public class Trie implements Serializable {
 
         /** Field-wise serialization */
         @Override
-        public void serialize(OutputStream out) throws IOException {
+        public void serialize(@NotNull OutputStream out) throws IOException {
             var stream = new DataOutputStream(out);
             serializeIntoDataStream(stream);
         }
 
         /** Serialization helper */
-        private void serializeIntoDataStream(DataOutputStream stream) throws IOException {
+        private void serializeIntoDataStream(@NotNull DataOutputStream stream) throws IOException {
             stream.writeInt(endingsCount);
             stream.writeInt(passingThrough);
             stream.writeInt(links.size());
@@ -158,13 +153,13 @@ public class Trie implements Serializable {
 
         /** Field-wise deserialization */
         @Override
-        public void deserialize(InputStream in) throws IOException {
+        public void deserialize(@NotNull InputStream in) throws IOException {
             var stream = new DataInputStream(in);
             deserializeFromDataStream(stream);
         }
 
         /** Serialization helper */
-        private void deserializeFromDataStream(DataInputStream stream) throws IOException {
+        private void deserializeFromDataStream(@NotNull DataInputStream stream) throws IOException {
             endingsCount = stream.readInt();
             if (endingsCount < 0)
                 throw new StreamCorruptedException("Endings count cannot be negative. Stream corrupted");

@@ -52,15 +52,15 @@ class TrieTest {
     }
 
     @Test
-    void testSerializeEmpty() {
+    void testSerializeEmpty() throws IOException {
         var result = new ByteArrayOutputStream();
         assertDoesNotThrow(() -> trie.serialize(result));
 
         var expected = new ByteArrayOutputStream();
         var dataExpected = new DataOutputStream(expected);
-        assertDoesNotThrow(() -> dataExpected.writeInt(0));
-        assertDoesNotThrow(() -> dataExpected.writeInt(0));
-        assertDoesNotThrow(() -> dataExpected.writeInt(0));
+        dataExpected.writeInt(0);
+        dataExpected.writeInt(0);
+        dataExpected.writeInt(0);
 
         assertArrayEquals(expected.toByteArray(), result.toByteArray());
     }
@@ -71,26 +71,26 @@ class TrieTest {
     }
 
     @Test
-    void testDeserializeCorrupted() {
+    void testDeserializeCorrupted() throws IOException {
         var corrupted1 = new ByteArrayOutputStream();
         var dataCorrupted1 = new DataOutputStream(corrupted1);
-        assertDoesNotThrow(() -> dataCorrupted1.writeInt(-1));
-        assertDoesNotThrow(() -> dataCorrupted1.writeInt(0));
-        assertDoesNotThrow(() -> dataCorrupted1.writeInt(0));
+        dataCorrupted1.writeInt(-1);
+        dataCorrupted1.writeInt(0);
+        dataCorrupted1.writeInt(0);
 
 
         var corrupted2 = new ByteArrayOutputStream();
         var dataCorrupted2 = new DataOutputStream(corrupted2);
-        assertDoesNotThrow(() -> dataCorrupted2.writeInt(0));
-        assertDoesNotThrow(() -> dataCorrupted2.writeInt(-1));
-        assertDoesNotThrow(() -> dataCorrupted2.writeInt(0));
+        dataCorrupted2.writeInt(0);
+        dataCorrupted2.writeInt(-1);
+        dataCorrupted2.writeInt(0);
 
 
         var corrupted3 = new ByteArrayOutputStream();
         var dataCorrupted3 = new DataOutputStream(corrupted3);
-        assertDoesNotThrow(() -> dataCorrupted3.writeInt(0));
-        assertDoesNotThrow(() -> dataCorrupted3.writeInt(0));
-        assertDoesNotThrow(() -> dataCorrupted3.writeInt(-1));
+        dataCorrupted3.writeInt(0);
+        dataCorrupted3.writeInt(0);
+        dataCorrupted3.writeInt(-1);
 
         assertThrows(StreamCorruptedException.class, () ->
                 trie.deserialize(new ByteArrayInputStream(corrupted1.toByteArray())));
@@ -167,7 +167,6 @@ class TrieTest {
 
         trie.add("");
         assertEquals(1, trie.getSize());
-
 
         trie.add("Hello");
         assertEquals(2, trie.getSize());
