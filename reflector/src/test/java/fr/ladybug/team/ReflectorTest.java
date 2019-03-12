@@ -8,6 +8,7 @@ class ReflectorTest {
 
     @Test
     void testIn7dev() {
-        Reflector.printStructure(IndevTestClass.class);
+//        Reflector.printStructure(IndevTestClass.class, "Test.java");
+        Reflector.diffClasses(IndevTestClass.class, IndevTestClass2.class);
     }
 }

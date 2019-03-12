@@ -1,6 +1,9 @@
 package fr.ladybug.team;
 
-public class IndevTestClass<T extends String> {
+import java.lang.reflect.Member;
+import java.util.List;
+
+public class IndevTestClass<T extends String & Member> {
     public int name;
     static private String data;
     protected T what;
@@ -14,4 +17,21 @@ public class IndevTestClass<T extends String> {
     public static <E extends java.lang.Object> java.lang.String anotherMethod(E v4) {
         return null;
     }
+    public static void Main(String[] args, List<? super String> list) {
+
+    }
+
+    class InnerOne {
+        int kek;
+    }
+
+    static class NestedOne {
+        int kok;
+    }
+
+    interface wierdOne<F> {
+        int wow();
+    }
+
+    class TemplatedOne<F extends String & Member> { }
 }
