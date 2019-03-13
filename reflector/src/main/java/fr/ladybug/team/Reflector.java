@@ -1,20 +1,25 @@
 package fr.ladybug.team;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/** Class presents utils for partial source code restoration from Class instance */
 public class Reflector {
 
     private static final String INDENT = "    ";
     private static int freshNumber = 0;
 
+    /** Service only method, delivers next numbers */
     private static int getFreshNumber() {
         return freshNumber++;
     }
 
-    private static String genericVariablesFormat(GenericDeclaration genericDeclaration) {
+    /** Formats GenericDeclaration instance to fancy-looking compilable string */
+    private static @NotNull String genericVariablesFormat(@NotNull GenericDeclaration genericDeclaration) {
         if (genericDeclaration.getTypeParameters().length == 0) {
             return "";
         }
@@ -25,7 +30,8 @@ public class Reflector {
         }
     }
 
-    private static String fieldRepresentation(Field field) {
+    /** Formats Field instace to fancy-looking compilable string */
+    private static @NotNull String fieldRepresentation(@NotNull Field field) {
         var result = new StringBuilder();
         result.append(INDENT);
         result.append(field.getModifiers() == 0 ? "" : Modifier.toString(field.getModifiers()));
@@ -38,7 +44,8 @@ public class Reflector {
         return result.toString();
     }
 
-    private static String methodRepresentation(Method method) {
+    /** Formats Method instance to fancy-looking compilable string */
+    private static @NotNull String methodRepresentation(@NotNull Method method) {
         var result = new StringBuilder();
         result.append(INDENT);
         result.append(method.getModifiers() == 0 ? "" : Modifier.toString(method.getModifiers()));
@@ -74,7 +81,8 @@ public class Reflector {
         return result.toString();
     }
 
-    private static String classRepresentation(Class<?> clazz) {
+    /** Format Class instance to fancy-looking compilable string */
+    private static @NotNull String classRepresentation(@NotNull Class<?> clazz) {
         var result = new StringBuilder();
         result.append(INDENT);
         result.append(clazz.getModifiers() == 0 ? "" : Modifier.toString(clazz.getModifiers()) + " ");
@@ -90,13 +98,24 @@ public class Reflector {
         return result.toString();
     }
 
-    public static void printStructure(Class<?> someClass, String filename) throws IOException {
+    /**
+     * Writes compilable Class instance's source code to the given file
+     * @param someClass the Class instance whose source code is to be written to file
+     * @param filename the filename of the file to which class's source code is to be written
+     * @throws IOException in case of bad filename, when file cannot be properly open for writing
+     */
+    public static void printStructure(@NotNull Class<?> someClass, @NotNull String filename) throws IOException {
         try (FileOutputStream fileOutput = new FileOutputStream(filename); PrintStream out = new PrintStream(fileOutput)) {
             printStructureToPrintStream(someClass, out);
         }
     }
 
-    public static void printStructureToPrintStream(Class<?> someClass, PrintStream out) {
+    /**
+     * Writes compilable Class instance's source code to the given PrintStream
+     * @param someClass the Class instance whose source code is to be written to PrintStream
+     * @param out the PrintStream to which class's source code is to be written
+     */
+    public static void printStructureToPrintStream(@NotNull Class<?> someClass, @NotNull PrintStream out) {
         freshNumber = 0;
 
 //        out.println("package pkg;");
@@ -128,11 +147,24 @@ public class Reflector {
         out.println("}");
     }
 
-    public static void diffClasses(Class<?> aClass, Class<?> bClass) {
+    /**
+     * Prints line-by-line differences between two classes to console
+     * Not different parts of classes are to be found as longest common subsequence of two sets of lines
+     * @param aClass the master class which is to be compared with slave one
+     * @param bClass the slave class which is to be compared with master one
+     */
+    public static void diffClasses(@NotNull Class<?> aClass, @NotNull Class<?> bClass) {
         diffClassesToPrintStream(aClass, bClass, System.out);
     }
 
-    public static void diffClassesToPrintStream(Class<?> aClass, Class<?> bClass, PrintStream out) {
+    /**
+     * Writes line-by-line differences between two classes to the given PrintStream
+     * Not different parts of classes are to be found as longest common subsequence of two sets of lines
+     * @param aClass the master class which is to be compared with slave one
+     * @param bClass the slave class which is to be compared with master one
+     * @param out the PrintStream to which classes' differences are to be written
+     */
+    public static void diffClassesToPrintStream(@NotNull Class<?> aClass, @NotNull Class<?> bClass, @NotNull PrintStream out) {
 
         var aStream = new ByteArrayOutputStream();
         var aPrintStream = new PrintStream(aStream);
@@ -179,7 +211,16 @@ public class Reflector {
         }
     }
 
-    private static ArrayList<Integer> longestCommonSequence(ArrayList<String> aList, ArrayList<String> bList) {
+    /** Finds longest commong subsequence in to lists of string
+     * First list is considered as master list from which will be extracted answer lines numbers
+     * Second list is just additional lines provider, no lines' number will be taken from one
+     * @param aList the master list from which will be extracted answer lines' numbers
+     * @param bList the list which is additional lines provider
+     * @return list of indices (lines numbers) from master list which have been found in the second one
+     */
+    private static @NotNull ArrayList<Integer> longestCommonSequence(
+            @NotNull ArrayList<String> aList,
+            @NotNull ArrayList<String> bList) {
         int aSize = aList.size();
         int bSize = bList.size();
         int[][] dp = new int[aSize + 1][bSize + 1];
