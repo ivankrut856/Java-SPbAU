@@ -1,1 +1,6 @@
+before_script: cd linkedHashMap
+
 language: java
+
+jdk:
+    - oraclejdk11
