@@ -1,6 +1,8 @@
-before_script: cd trie
-
 language: java
-
+os:
+    - linux
 jdk:
- - oraclejdk11
+    - oraclejdk11
+env:
+    - PROJECT_DIR=trie
+script: cd $PROJECT_DIR && ./gradlew build
