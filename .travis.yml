@@ -1,9 +1,13 @@
-before_script: cd db
-
 language: java
-
+os:
+    - linux
 jdk:
- - oraclejdk11
-
-services:
- - mongodb
+    - oraclejdk11
+env:
+    - PROJECT_DIR=db
+    - PROJECT_DIR=hashTable
+    - PROJECT_DIR=reflector
+    - PROJECT_DIR=trie
+    - PROJECT_DIR=myTreeSet
+    - PROJECT_DIR=qsort
+script: cd $PROJECT_DIR && ./gradlew build
