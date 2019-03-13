@@ -9,4 +9,5 @@ env:
     - PROJECT_DIR=reflector
     - PROJECT_DIR=trie
     - PROJECT_DIR=myTreeSet
+    - PROJECT_DIR=qsort
 script: cd $PROJECT_DIR && ./gradlew build
