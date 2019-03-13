@@ -1,6 +1,12 @@
-before_script: cd hashTable
-
 language: java
-
+os:
+    - linux
 jdk:
- - oraclejdk11
+    - oraclejdk11
+env:
+    - PROJECT_DIR=db
+    - PROJECT_DIR=hashTable
+    - PROJECT_DIR=reflector
+    - PROJECT_DIR=trie
+    - PROJECT_DIR=myTreeSet
+script: cd $PROJECT_DIR && ./gradlew build
