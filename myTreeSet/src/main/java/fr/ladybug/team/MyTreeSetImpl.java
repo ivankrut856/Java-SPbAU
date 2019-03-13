@@ -141,17 +141,27 @@ public class MyTreeSetImpl<T> extends AbstractSet<T> implements MyTreeSet<T> {
      * @param directionPredicate the predicate used to decide in which direction search goes
      * @return last element of the tree which was viewed or null if there were no such element
      */
-    private T binarySearchPredicate(@NotNull T element, @NotNull IntPredicate lookPredicate, @NotNull IntPredicate directionPredicate) {
+    private T binarySearchPredicate(@NotNull T element,
+                                    @NotNull IntPredicate lookPredicate,
+                                    @NotNull IntPredicate directionPredicate) {
+
         TreeNode currentNode = root;
         T currentResult = null;
-        while (currentNode != null) {
-            int structuralResult = innerCompare(currentNode.value, element);
-            int effectiveResult = descendingComparison ? -structuralResult : structuralResult;
 
-            if (lookPredicate.test(effectiveResult)) {
+        while (currentNode != null) {
+            int pureComparisonResult = innerCompare(currentNode.value, element);
+            int inverseAffectedComparisonResult = descendingComparison ? -pureComparisonResult : pureComparisonResult;
+
+            boolean shouldTakeAsCandidate = lookPredicate.test(inverseAffectedComparisonResult);
+            if (shouldTakeAsCandidate) {
                 currentResult = currentNode.value;
             }
-            if ((directionPredicate.test(effectiveResult)) ^ descendingComparison) {
+
+            boolean goRight = directionPredicate.test(inverseAffectedComparisonResult);
+            if (descendingComparison)
+                goRight = !goRight;
+
+            if (goRight) {
                 currentNode = currentNode.right;
             }
             else {
@@ -287,9 +297,9 @@ public class MyTreeSetImpl<T> extends AbstractSet<T> implements MyTreeSet<T> {
         /** Node just after the iterator */
         private TreeNode currentNode;
         /** Node just before the iterator */
-        private TreeNode lastNextedNode = null;
+        private TreeNode lastReturnedNode = null;
         /** Whether node just before the iterator is just returned by next or not */
-        private boolean hasNexted = false;
+        private boolean hasReturned = false;
 
         /** Constructor sets iterator at the beginning of the parent set */
         private MyTreeSetIterator() {
@@ -323,7 +333,7 @@ public class MyTreeSetImpl<T> extends AbstractSet<T> implements MyTreeSet<T> {
             if (!hasNext())
                 throw new NoSuchElementException();
 
-            lastNextedNode = currentNode;
+            lastReturnedNode = currentNode;
             if (descendingComparison) {
                 currentNode = currentNode.previous();
             }
@@ -331,8 +341,8 @@ public class MyTreeSetImpl<T> extends AbstractSet<T> implements MyTreeSet<T> {
                 currentNode = currentNode.next();
             }
 
-            hasNexted = true;
-            return lastNextedNode.value;
+            hasReturned = true;
+            return lastReturnedNode.value;
         }
 
         /**
@@ -341,32 +351,32 @@ public class MyTreeSetImpl<T> extends AbstractSet<T> implements MyTreeSet<T> {
          */
         @Override
         public void remove() {
-            if (!hasNexted)
+            if (!hasReturned)
                 throw new IllegalStateException();
 
-            hasNexted = false;
+            hasReturned = false;
 
-            if (lastNextedNode.right == null) {
-                if (lastNextedNode.left != null) {
-                    lastNextedNode.left.parent = lastNextedNode.parent;
+            if (lastReturnedNode.right == null) {
+                if (lastReturnedNode.left != null) {
+                    lastReturnedNode.left.parent = lastReturnedNode.parent;
                 }
-                if (lastNextedNode.parent != null) {
-                    if (lastNextedNode.parent.left == lastNextedNode) {
-                        lastNextedNode.parent.left = lastNextedNode.left;
+                if (lastReturnedNode.parent != null) {
+                    if (lastReturnedNode.parent.left == lastReturnedNode) {
+                        lastReturnedNode.parent.left = lastReturnedNode.left;
                     }
                     else {
-                        lastNextedNode.parent.right = lastNextedNode.left;
+                        lastReturnedNode.parent.right = lastReturnedNode.left;
                     }
                 }
                 else {
-                    root = lastNextedNode.left;
+                    root = lastReturnedNode.left;
                 }
             }
             else {
-                TreeNode next = lastNextedNode.next();
+                TreeNode next = lastReturnedNode.next();
                 T tmp = Objects.requireNonNull(next).value;
-                next.value = lastNextedNode.value;
-                lastNextedNode.value = tmp;
+                next.value = lastReturnedNode.value;
+                lastReturnedNode.value = tmp;
 
                 // if (next.left == null) -- always true
                 if (next.right != null) {
