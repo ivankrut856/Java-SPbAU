@@ -62,7 +62,9 @@ public class Reflector {
             if (returnTypeName.equals("void")) {
                 result.append("return;");
             } else {
-                result.append("return (new " + returnTypeName + "[1])[0];");
+                result.append("return (new ");
+                result.append(returnTypeName);
+                result.append("[1])[0];");
             }
         }
 
@@ -76,9 +78,7 @@ public class Reflector {
         var result = new StringBuilder();
         result.append(INDENT);
         result.append(clazz.getModifiers() == 0 ? "" : Modifier.toString(clazz.getModifiers()) + " ");
-        if (clazz.isInterface()) {
-        }
-        else {
+        if (!clazz.isInterface()) {
             result.append("class ");
         }
         result.append(clazz.getSimpleName());
@@ -90,35 +90,38 @@ public class Reflector {
         return result.toString();
     }
 
-    public static void printStructure(Class<?> someClass, String filename) {
+    public static void printStructure(Class<?> someClass, String filename) throws IOException {
         try (FileOutputStream fileOutput = new FileOutputStream(filename); PrintStream out = new PrintStream(fileOutput)) {
             printStructureToPrintStream(someClass, out);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
-    private static void printStructureToPrintStream(Class<?> someClass, PrintStream out) {
+    public static void printStructureToPrintStream(Class<?> someClass, PrintStream out) {
         freshNumber = 0;
+
+//        out.println("package pkg;");
+//        out.println();
+
         out.print("public class SomeClass");
         out.print(genericVariablesFormat(someClass));
         out.println(" {");
 
-        Field[] fields = someClass.getDeclaredFields();
+        var fields = new ArrayList<Field>(Arrays.asList(someClass.getDeclaredFields()));
+        fields.sort(Comparator.comparing(Field::getName, String::compareTo));
         for (var field : fields) {
             out.println(fieldRepresentation(field));
         }
         out.println();
 
-        Method[] methods = someClass.getDeclaredMethods();
+        var methods = new ArrayList<Method>(Arrays.asList(someClass.getDeclaredMethods()));
+        methods.sort(Comparator.comparing(Method::getName, String::compareTo));
         for (var method : methods) {
             out.println(methodRepresentation(method));
         }
         out.println();
 
-        Class<?>[] classes = someClass.getDeclaredClasses();
+        var classes = new ArrayList<Class<?>>(Arrays.asList(someClass.getDeclaredClasses()));
+        classes.sort(Comparator.comparing(Class::getName, String::compareTo));
         for (var clazz : classes) {
             out.println(classRepresentation(clazz));
         }
@@ -126,6 +129,11 @@ public class Reflector {
     }
 
     public static void diffClasses(Class<?> aClass, Class<?> bClass) {
+        diffClassesToPrintStream(aClass, bClass, System.out);
+    }
+
+    public static void diffClassesToPrintStream(Class<?> aClass, Class<?> bClass, PrintStream out) {
+
         var aStream = new ByteArrayOutputStream();
         var aPrintStream = new PrintStream(aStream);
 
@@ -151,25 +159,23 @@ public class Reflector {
             bList.add(bScanner.nextLine());
         }
 
-//        aList = new ArrayList<>(Arrays.asList("4"));
-//        bList = new ArrayList<>(Arrays.asList("4"));
         ArrayList<Integer> indices = longestCommonSequence(aList, bList);
 
         int aPointer = 0;
-        System.out.println("First class in relation to second:");
+        out.println("First class in relation to second:");
         for (int i = 0; i < aList.size(); i++) {
             if (aPointer < indices.size() && indices.get(aPointer) == i) {
                 aPointer++;
                 continue;
             }
-            System.out.print("I  > ");
-            System.out.print(i + ": ");
-            System.out.println(aList.get(i));
+            out.print("I  > ");
+            out.print(i + ": ");
+            out.println(aList.get(i));
 
 
-            System.out.print("II > ");
-            System.out.print(i + ": ");
-            System.out.println(i < bList.size() ? bList.get(i) : "<Empty line>");
+            out.print("II > ");
+            out.print(i + ": ");
+            out.println(i < bList.size() ? bList.get(i) : "<Empty line>");
         }
     }
 
@@ -193,18 +199,12 @@ public class Reflector {
             }
         }
 
-        //noinspection unchecked
-//        ArrayList<Integer>[] result = (ArrayList<Integer>[])(new ArrayList[2]);
         var result = new ArrayList<Integer>();
-//        result[0] = new ArrayList<>();
-//        result[1] = new ArrayList<>();
         int aPointer = aSize;
         int bPointer = bSize;
         while (aPointer > 0 && bPointer > 0) {
             if (par[aPointer][bPointer] == 1) {
                 result.add(aPointer - 1);
-//                result[0].add(aPointer - 1);
-//                result[1].add(bPointer - 1);
                 aPointer--;
                 bPointer--;
             }
@@ -216,8 +216,6 @@ public class Reflector {
             }
         }
         Collections.reverse(result);
-//        Collections.reverse(result[0]);
-//        Collections.reverse(result[1]);
 
         return result;
     }
