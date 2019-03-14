@@ -4,8 +4,9 @@ os:
 jdk:
     - oraclejdk11
 script:
-    for D in */; do 
-        if [ -f $Dtravis_check ]; then
-              $D./gradlew build
-        fi
-    done
+        for D in */; do
+                if [ -f "${D}travis_check" ]; then
+                        echo "${D}travis_check"
+                        $D./gradlew build
+                fi
+        done
