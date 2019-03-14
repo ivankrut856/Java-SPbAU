@@ -9,7 +9,7 @@ script:
                 if [ -f "${D}travis_check" ]; then
                         echo "${D}travis_check"
                         cd $D
-                        ./gradlew check
+                        ./gradlew check || { exit 1; }
                         cd ../
                 fi
         done
