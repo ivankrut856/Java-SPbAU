@@ -8,6 +8,8 @@ script:
         for D in */; do
                 if [ -f "${D}travis_check" ]; then
                         echo "${D}travis_check"
-                        $D./gradlew test
+                        cd $D
+                        ./gradlew check
+                        cd ../
                 fi
         done
