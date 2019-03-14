@@ -13,3 +13,5 @@ script:
                         cd ../
                 fi
         done
+services:
+ - mongodb
