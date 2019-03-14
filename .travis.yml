@@ -3,11 +3,13 @@ os:
     - linux
 jdk:
     - oraclejdk11
-env:
-    - PROJECT_DIR=db
-    - PROJECT_DIR=hashTable
-    - PROJECT_DIR=reflector
-    - PROJECT_DIR=trie
-    - PROJECT_DIR=myTreeSet
-    - PROJECT_DIR=qsort
-script: cd $PROJECT_DIR && ./gradlew build
+script:
+    - |
+        for D in */; do
+                if [ -f "${D}travis_check" ]; then
+                        echo "${D}travis_check"
+                        cd $D
+                        ./gradlew check || { exit 1; }
+                        cd ../
+                fi
+        done
