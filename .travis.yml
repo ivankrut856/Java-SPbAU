@@ -1,9 +1,19 @@
-before_script: cd db
-
 language: java
-
+os:
+    - linux
 jdk:
- - oraclejdk11
+    - oraclejdk11
+script:
+    - |
+        for D in */; do
+                if [ -f "${D}travis_check" ]; then
+                        echo "${D}travis_check"
+                        cd $D
+                        ./gradlew check || { exit 1; }
+                        cd ../
+                fi
+        done
+
 
 services:
  - mongodb
