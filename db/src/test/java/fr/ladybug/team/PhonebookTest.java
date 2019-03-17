@@ -13,11 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PhonebookTest {
 
-    Phonebook phonebook;
+    private Phonebook phonebook;
 
     @BeforeEach
     void fillTestData() {
-        phonebook = new Phonebook("phonebook_db");
+        phonebook = new Phonebook("phonebook_test_db");
         phonebook.clearDB();
 
         Name man1 = new Name("peter", new ObjectId());
@@ -92,11 +92,11 @@ class PhonebookTest {
 
         assertEquals(expectedListNames.size(), actualList.size());
         for (int i = 0; i < expectedListNames.size(); i++) {
-            assertNotNull(actualList.get(i).name);
-            assertEquals(expectedListNames.get(i), actualList.get(i).name.getName());
+            assertNotNull(actualList.get(i).name());
+            assertEquals(expectedListNames.get(i), actualList.get(i).name().getName());
 
-            assertNotNull(actualList.get(i).phone);
-            assertEquals(expectedListPhones.get(i), actualList.get(i).phone.getPhone());
+            assertNotNull(actualList.get(i).phone());
+            assertEquals(expectedListPhones.get(i), actualList.get(i).phone().getPhone());
         }
     }
 

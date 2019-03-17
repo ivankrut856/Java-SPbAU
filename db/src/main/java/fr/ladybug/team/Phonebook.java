@@ -222,8 +222,15 @@ public class Phonebook {
      * Pair class representing name-phone record in database
      */
     static public class NamePhonePair {
-        public Name name;
-        public Phone phone;
+        private Name name;
+        public Name name() {
+            return name;
+        }
+
+        private Phone phone;
+        public Phone phone() {
+            return phone;
+        }
     }
 
     /**
@@ -231,7 +238,7 @@ public class Phonebook {
      * CREATE -- Object will be created in case of non-existence
      * NOTHING -- Nothing will be performed in case of non-existence
      */
-    enum NoSuchElementPolicy {
+    private enum NoSuchElementPolicy {
         CREATE,
         NOTHING
     }
