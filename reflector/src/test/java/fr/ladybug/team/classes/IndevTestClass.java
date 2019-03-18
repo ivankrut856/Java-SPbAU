@@ -1,4 +1,4 @@
-package fr.ladybug.team;
+package fr.ladybug.team.classes;
 
 import java.lang.reflect.Member;
 import java.util.List;

@@ -58,26 +58,33 @@ public class Reflector {
         result.append(method.getName());
 
         result.append(Arrays.stream(method.getGenericParameterTypes()).map(x -> x.getTypeName() + " v" + getFreshNumber()).collect(Collectors.joining(", ", "(", ")")));
-        result.append(" {\n");
-        result.append(INDENT);
-        result.append(INDENT);
 
-        if (!method.getReturnType().isPrimitive()) {
-            result.append("return null;");
-        } else {
-            String returnTypeName = method.getGenericReturnType().getTypeName();
-            if (returnTypeName.equals("void")) {
-                result.append("return;");
+        if (Modifier.isAbstract(method.getModifiers())) {
+            result.append(";");
+        }
+        else {
+            result.append(" {\n");
+            result.append(INDENT);
+            result.append(INDENT);
+
+            if (!method.getReturnType().isPrimitive()) {
+                result.append("return null;");
             } else {
-                result.append("return (new ");
-                result.append(returnTypeName);
-                result.append("[1])[0];");
+                String returnTypeName = method.getGenericReturnType().getTypeName();
+                if (returnTypeName.equals("void")) {
+                    result.append("return;");
+                } else {
+                    result.append("return (new ");
+                    result.append(returnTypeName);
+                    result.append("[1])[0];");
+                }
             }
+
+            result.append("\n");
+            result.append(INDENT);
+            result.append("}");
         }
 
-        result.append("\n");
-        result.append(INDENT);
-        result.append("}");
         return result.toString();
     }
 
@@ -118,10 +125,8 @@ public class Reflector {
     public static void printStructureToPrintStream(@NotNull Class<?> someClass, @NotNull PrintStream out) {
         freshNumber = 0;
 
-//        out.println("package pkg;");
-//        out.println();
-
-        out.print("public class SomeClass");
+        out.print(someClass.getModifiers() == 0 ? "" : Modifier.toString(someClass.getModifiers()) + " ");
+        out.print("class SomeClass");
         out.print(genericVariablesFormat(someClass));
         out.println(" {");
 
@@ -223,19 +228,19 @@ public class Reflector {
             @NotNull ArrayList<String> bList) {
         int aSize = aList.size();
         int bSize = bList.size();
-        int[][] dp = new int[aSize + 1][bSize + 1];
+        int[][] prefixResult = new int[aSize + 1][bSize + 1];
         int[][] par = new int[aSize + 1][bSize + 1];
         for (int i = 1; i <= aSize; i++) {
             for (int j = 1; j <= bSize; j++) {
                 if (aList.get(i - 1) != null
                         && bList.get(j - 1) != null
                         && aList.get(i - 1).equals(bList.get(j - 1))) {
-                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                    prefixResult[i][j] = prefixResult[i - 1][j - 1] + 1;
                     par[i][j] = 1;
                 }
-                int neighbourhoodMax = Math.max(dp[i - 1][j], dp[i][j - 1]);
-                if (neighbourhoodMax > dp[i][j]) {
-                    dp[i][j] = neighbourhoodMax;
+                int neighbourhoodMax = Math.max(prefixResult[i - 1][j], prefixResult[i][j - 1]);
+                if (neighbourhoodMax > prefixResult[i][j]) {
+                    prefixResult[i][j] = neighbourhoodMax;
                 }
             }
         }
@@ -249,7 +254,7 @@ public class Reflector {
                 aPointer--;
                 bPointer--;
             }
-            else if (dp[aPointer - 1][bPointer] > dp[aPointer][bPointer - 1]) {
+            else if (prefixResult[aPointer - 1][bPointer] > prefixResult[aPointer][bPointer - 1]) {
                 aPointer--;
             }
             else {
