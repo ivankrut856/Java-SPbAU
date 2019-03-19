@@ -229,14 +229,14 @@ public class Reflector {
         int aSize = aList.size();
         int bSize = bList.size();
         int[][] prefixResult = new int[aSize + 1][bSize + 1];
-        int[][] par = new int[aSize + 1][bSize + 1];
+        int[][] backLink = new int[aSize + 1][bSize + 1];
         for (int i = 1; i <= aSize; i++) {
             for (int j = 1; j <= bSize; j++) {
                 if (aList.get(i - 1) != null
                         && bList.get(j - 1) != null
                         && aList.get(i - 1).equals(bList.get(j - 1))) {
                     prefixResult[i][j] = prefixResult[i - 1][j - 1] + 1;
-                    par[i][j] = 1;
+                    backLink[i][j] = 1;
                 }
                 int neighbourhoodMax = Math.max(prefixResult[i - 1][j], prefixResult[i][j - 1]);
                 if (neighbourhoodMax > prefixResult[i][j]) {
@@ -249,7 +249,7 @@ public class Reflector {
         int aPointer = aSize;
         int bPointer = bSize;
         while (aPointer > 0 && bPointer > 0) {
-            if (par[aPointer][bPointer] == 1) {
+            if (backLink[aPointer][bPointer] == 1) {
                 result.add(aPointer - 1);
                 aPointer--;
                 bPointer--;
