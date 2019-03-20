@@ -59,7 +59,7 @@ class PhonebookTest {
         phonebook.getNamesByPhone("8800").forEachRemaining(x-> actualList.add(x.getName()));
         assertEquals(actualList, Collections.emptyList());
 
-        phonebook.addPair("drunker", "8800");
+        assertDoesNotThrow(() -> phonebook.addPair("drunker", "8800"));
 
         actualList.clear();
         phonebook.getPhonesByName("drunker").forEachRemaining(x-> actualList.add(x.getPhone()));
@@ -108,12 +108,18 @@ class PhonebookTest {
     }
 
     @Test
+    void duplicateAddTest() {
+        assertDoesNotThrow(() -> phonebook.addPair("does not", "throw"));
+        assertThrows(AlreadyExistsException.class, () -> phonebook.addPair("does not", "throw"));
+    }
+
+    @Test
     void changePairTest() {
         List<String> actualList = new ArrayList<>();
         phonebook.getNamesByPhone("777-god").forEachRemaining(x-> actualList.add(x.getName()));
         assertEquals(actualList, Collections.emptyList());
 
-        phonebook.changePair("devil", "666-devil", "devil", "777-god");
+        assertDoesNotThrow(() -> phonebook.changePair("devil", "666-devil", "devil", "777-god"));
 
         actualList.clear();
         phonebook.getNamesByPhone("777-god").forEachRemaining(x-> actualList.add(x.getName()));

@@ -15,6 +15,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("Welcome to the world greatest phonebook");
+        printHelp();
 
         boolean isRunning = true;
         while (isRunning) {
@@ -28,27 +29,33 @@ public class Main {
                 case 1: {
                     String name = askString(scanner, "Name: ");
                     String phone = askString(scanner, "Phone: ");
-                    phonebook.addPair(name, phone);
+                    try {
+                        phonebook.addPair(name, phone);
+                    }
+                    catch (AlreadyExistsException e) {
+                        System.out.println("Such name-phone pair already exists");
+                        break;
+                    }
                     System.out.println("Done");
                     break;
                 }
                 case 2: {
-                    String name = askString(scanner, "Name: ");
+                    String name = askString(scanner, "Name:");
                     Iterator<Phone> it = phonebook.getPhonesByName(name);
                     System.out.println("There is a full list of phone numbers of the person:");
                     it.forEachRemaining((x) -> System.out.println(x.getPhone()));
                     break;
                 }
                 case 3: {
-                    String phone = askString(scanner, "Phone: ");
+                    String phone = askString(scanner, "Phone:");
                     Iterator<Name> it = phonebook.getNamesByPhone(phone);
                     System.out.println("There is a full list of names associated with the phone:");
                     it.forEachRemaining((x) -> System.out.println(x.getName()));
                     break;
                 }
                 case 4: {
-                    String name = askString(scanner, "Name: ");
-                    String phone = askString(scanner, "Phone: ");
+                    String name = askString(scanner, "Name:");
+                    String phone = askString(scanner, "Phone:");
 
                     try {
                         phonebook.removePair(name, phone);
@@ -62,25 +69,26 @@ public class Main {
                 }
                 case 5:
                 case 6: {
-                    String name = askString(scanner, "Name: ");
-                    String phone = askString(scanner, "Phone: ");
+                    String name = askString(scanner, "Name:");
+                    String phone = askString(scanner, "Phone:");
                     String newName = name;
                     String newPhone = phone;
                     if (command == 5) {
-                        newName = askString(scanner, "New name: ");
+                        newName = askString(scanner, "New name:");
                     }
                     else {
-                        newPhone = askString(scanner, "New phone: ");
+                        newPhone = askString(scanner, "New phone:");
                     }
 
                     try {
-                        phonebook.removePair(name, phone);
+                        phonebook.changePair(name, phone, newName, newPhone);
+                    } catch (AlreadyExistsException e) {
+                        System.out.println("Such name-phone pair already exists, but done");
                     }
                     catch (NoSuchElementException e) {
-                        System.out.println("No such name-phone pair in the phonebook");
-                        break;
+                        System.out.println("No such name-phone pair");
                     }
-                    phonebook.addPair(newName, newPhone);
+
                     System.out.println("Done");
                     break;
                 }
@@ -96,7 +104,7 @@ public class Main {
                 }
 
                 default:
-                    System.out.println("Write 0-7 to act");
+                    printHelp();
             }
             System.out.flush();
         }
@@ -121,8 +129,21 @@ public class Main {
     }
 
     private static String askString(Scanner scanner, String promptMessage) {
-        System.out.print(promptMessage);
+        System.out.println(promptMessage);
         System.out.flush();
         return scanner.nextLine();
+    }
+
+    private static void printHelp() {
+        System.out.println("Enter 0-7 to act:");
+        System.out.println("0 to quit");
+        System.out.println("1 to add new name-phone pair");
+        System.out.println("2 to find all phones by name");
+        System.out.println("3 to find all names by phone");
+        System.out.println("4 to remove name-phone pair");
+        System.out.println("5 to change name of name-phone pair");
+        System.out.println("6 to change phone of name-phone pair");
+        System.out.println("7 to print all name-phone pairs");
+        System.out.flush();
     }
 }
