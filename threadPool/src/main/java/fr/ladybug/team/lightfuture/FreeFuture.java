@@ -7,10 +7,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/**
- * Implementation of the LightFuture async tasks for thread pool
- * {@inheritDoc}
- */
+/** {@inheritDoc} */
 public class FreeFuture<R> implements LightFuture<R> {
     /** Status of the task {@see #TaskStatus} */
     private TaskStatus status;
@@ -22,7 +19,7 @@ public class FreeFuture<R> implements LightFuture<R> {
 
     /** Main essence of the task */
     private Supplier<R> action;
-    /** Thread pool in which all tasks are to be exectuted */
+    /** Thread pool in which all tasks are to be executed */
     private ThreadPool executor;
     /** List of depended tasks */
     private List<FreeFuture<?>> applicableTasks;
@@ -48,27 +45,18 @@ public class FreeFuture<R> implements LightFuture<R> {
      * @return the task object
      */
     public static <R> FreeFuture<R> createDelayedTask(Supplier<R> action, ThreadPool executor) {
-        var task = new FreeFuture<>(action, executor);
-        return task;
+        return new FreeFuture<>(action, executor);
     }
 
     /**
      * Submits the task to executor thread pool
      * @throws IllegalStateException the IllegalStateException is to be thrown when trying to submit once more after submission
      */
-    public void submit() {
-        if (isSubmitted())
+    public synchronized void submit() {
+        if (status != TaskStatus.NOT_STARTED)
             throw new IllegalStateException("Task has already been submitted");
         status = TaskStatus.SUBMITTED;
         executor.submitTask(new ThreadPool.ThreadTask<>(action, this));
-    }
-
-    /**
-     * Whether task has already been submitted to the thread pool or not
-     * @return has the task been submitted or not
-     */
-    public boolean isSubmitted() {
-        return status != TaskStatus.NOT_STARTED;
     }
 
     /**
@@ -147,7 +135,7 @@ public class FreeFuture<R> implements LightFuture<R> {
     }
 
     @Override
-    public synchronized void done(R result) {
+    public synchronized void finish(R result) {
         status = TaskStatus.DONE;
         this.result = result;
         this.notifyAll();
@@ -157,21 +145,21 @@ public class FreeFuture<R> implements LightFuture<R> {
     }
 
     @Override
-    public synchronized void failed(Throwable thrownException) {
+    public synchronized void fail(Throwable thrownException) {
         status = TaskStatus.FAILED;
         this.thrownException = thrownException;
         this.notifyAll();
         for (var task : applicableTasks) {
-            task.failed(thrownException);
+            task.fail(thrownException);
         }
     }
 
     @Override
-    public synchronized void interrupted() {
+    public synchronized void interrupt() {
         status = TaskStatus.INTERRUPTED;
         this.notifyAll();
         for (var task : applicableTasks) {
-            task.interrupted();
+            task.interrupt();
         }
     }
 
@@ -180,7 +168,7 @@ public class FreeFuture<R> implements LightFuture<R> {
      * NOT_STARTED -- when the task has not yet been submitted to thread pool
      * SUBMITTED -- the task has been submitted, but decision about result has not been made
      * DONE -- the task successfully done with a result
-     * FAILEd -- the task failed with an exception
+     * FAILED -- the task failed with an exception
      * INTERRUPTED -- the task has been interrupted
      */
     private enum TaskStatus {

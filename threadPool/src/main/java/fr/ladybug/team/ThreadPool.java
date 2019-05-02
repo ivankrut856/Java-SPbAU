@@ -43,12 +43,18 @@ public class ThreadPool {
         }
     }
 
-    /** Shutdowns the pool. All threads and tasks are to be interrupted */
-    public void shutdown() {
+    /**
+     * Shutdowns the pool. All threads and tasks are to be interrupted
+     * @throws InterruptedException In case of thread interruption the exception will be thrown
+     */
+    public void shutdown() throws InterruptedException {
         synchronized (tasks) {
             isShutdown = true;
             for (var thread : threads) {
                 thread.interrupt();
+            }
+            for (var thread : threads) {
+                thread.join();
             }
         }
     }
@@ -67,7 +73,7 @@ public class ThreadPool {
                 }
 
                 if (Thread.currentThread().isInterrupted()) {
-                    task.charterer.interrupted();
+                    task.charterer.interrupt();
                 }
                 task.perform();
             }
@@ -75,13 +81,13 @@ public class ThreadPool {
                 while (tasks.size() != 0) {
                     task = tasks.pollFirst();
                     Objects.requireNonNull(task);
-                    task.charterer.interrupted();
+                    task.charterer.interrupt();
                 }
             }
         }
         catch (Throwable e) {
             if (task != null) {
-                task.charterer.failed(e);
+                task.charterer.fail(e);
             }
         }
     }
@@ -103,7 +109,7 @@ public class ThreadPool {
         /** Calculates action and puts it into charterer's result */
         public void perform() {
             R result = action.get();
-            charterer.done(result);
+            charterer.finish(result);
         }
     }
 }

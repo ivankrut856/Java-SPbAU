@@ -36,16 +36,16 @@ public interface LightFuture<T> {
      * Signals to the task to consider itself successfully done with a result
      * @param result the result with which has been done
      */
-    void done(T result);
+    void finish(T result);
 
     /**
      * Signals to the task to consider itself failed with an exception
      * @param thrownException the exception thrown during the task execution
      */
-    void failed(Throwable thrownException);
+    void fail(Throwable thrownException);
 
     /**
      * Signal to the task to consider itself interrupted
      */
-    void interrupted();
+    void interrupt();
 }
