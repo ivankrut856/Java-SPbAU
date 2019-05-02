@@ -32,7 +32,7 @@ public class FreeFuture<R> implements LightFuture<R> {
      * @return the task object
      */
     public static <R> FreeFuture<R> createTask(Supplier<R> action, ThreadPool executor) {
-        var task = new FreeFuture<>(action, executor);
+        var task = new FreeFuture<R>(action, executor);
         task.submit();
         return task;
     }

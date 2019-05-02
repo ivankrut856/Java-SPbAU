@@ -15,6 +15,7 @@ public class ThreadPool {
     /** All tasks which has not been started yet */
     private final ArrayDeque<ThreadTask<?>> tasks;
 
+
     /** Whether the pool is shutdown or not */
     private boolean isShutdown = false;
 
@@ -50,12 +51,12 @@ public class ThreadPool {
     public void shutdown() throws InterruptedException {
         synchronized (tasks) {
             isShutdown = true;
-            for (var thread : threads) {
-                thread.interrupt();
-            }
-            for (var thread : threads) {
-                thread.join();
-            }
+        }
+        for (var thread : threads) {
+            thread.interrupt();
+        }
+        for (var thread : threads) {
+            thread.join();
         }
     }
 
@@ -86,6 +87,7 @@ public class ThreadPool {
             }
         }
         catch (Throwable e) {
+            System.out.println(e);
             if (task != null) {
                 task.charterer.fail(e);
             }

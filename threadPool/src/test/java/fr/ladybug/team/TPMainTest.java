@@ -25,7 +25,7 @@ class TPMainTest {
     }
 
     @Test
-    void testTwiceSubmittion() throws LightExecutionException, InterruptedException {
+    void testTwiceSubmission() throws LightExecutionException, InterruptedException {
         var pool = new ThreadPool(1);
         var task = FreeFuture.createTask(() -> {
             return "A";
@@ -61,7 +61,7 @@ class TPMainTest {
     @Test
     void testNoTaskShutdown() {
         var pool = new ThreadPool(10);
-        pool.shutdown();
+        assertDoesNotThrow(pool::shutdown);
     }
 
     @Test
