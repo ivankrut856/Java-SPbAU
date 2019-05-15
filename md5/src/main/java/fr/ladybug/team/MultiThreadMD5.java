@@ -15,11 +15,14 @@ import java.util.concurrent.RecursiveTask;
 
 public class MultiThreadMD5 implements MD5Evaluator {
     @Override
+    /** {@inheritDoc} */
     public String evaluate(String filepath) throws IOException, NoSuchAlgorithmException {
         return new ForkJoinPool().invoke(new MD5Task(filepath));
     }
 
-
+    /**
+     * Task for fork-join pool
+     */
     private static class MD5Task extends RecursiveTask<String> {
         private final String filepath;
 

@@ -1,6 +1,7 @@
 package fr.ladybug.team;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,10 +13,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MD5Test {
 
-    private File file = null;
-    @AfterAll
-    public void loadTestFile() {
-        file = new File(this.getClass().getResource("/TestMD5File").getPath());
+    private static File file = null;
+    @BeforeAll
+    public static void loadTestFile() {
+        file = new File(MD5Test.class.getResource("/TestMD5File").getPath());
     }
 
     @Test

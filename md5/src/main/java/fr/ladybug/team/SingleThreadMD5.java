@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 public class SingleThreadMD5 implements MD5Evaluator {
     @Override
+    /** {@inheritDoc} */
     public String evaluate(String filepath) throws IOException, NoSuchAlgorithmException {
         File currentFile = new File(filepath);
         if (!currentFile.isDirectory()) {
