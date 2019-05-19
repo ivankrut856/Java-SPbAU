@@ -6,6 +6,7 @@ import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -41,6 +42,7 @@ public class Screen extends Application {
     public static final int CELL_ROWS_COUNT = 60;
 
     private Image redCrossImage;
+    private Image questionMarkImage;
     private Image[] cellStatesTexture = new Image[4];
     private Image[] tankGunTextures = new Image[3];
     private Image tankBodyTexture;
@@ -86,6 +88,7 @@ public class Screen extends Application {
         group.getChildren().add(tankController.getAssociatedBody());
         group.getChildren().add(tankController.getAssociatedGun());
         group.getChildren().add(getExitButton());
+        group.getChildren().add(getHelpButton());
 
         AnimationTimer timer = new AnimationTimer() {
             private long lastUpdate = 0;
@@ -139,6 +142,7 @@ public class Screen extends Application {
 
     private void loadImages() {
         redCrossImage = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream("redCross5.png")));
+        questionMarkImage = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream("questionMark.png")));
         for (int i = 0; i < 4; i++) {
             cellStatesTexture[i] = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream(String.format("cell-state-%d.png", i))));
         }
@@ -191,6 +195,28 @@ public class Screen extends Application {
         button.setBackground(Background.EMPTY);
 
         button.setOnMouseClicked(event -> Platform.exit());
+        return button;
+    }
+
+    private Button getHelpButton() {
+        var button = new Button();
+        button.setMinSize(2 * CELL_WIDTH, 2 * CELL_HEIGHT);
+        button.setPrefSize(2 * CELL_WIDTH, 2 * CELL_HEIGHT);
+        button.setLayoutX((CELL_COLUMNS_COUNT - 4) * CELL_WIDTH);
+        button.setLayoutY(0);
+
+        button.setOnMouseClicked((event) -> {
+            Platform.runLater(() -> {
+                var helpMessage = "Left-Right: A-D\nGun control: W-S\nFire: J\nReload/Change: R";
+                var alert = new Alert(Alert.AlertType.INFORMATION, helpMessage);
+                alert.setTitle("Help");
+                alert.showAndWait();
+            });
+        });
+
+        button.setGraphic(new ImageView(questionMarkImage));
+        button.setBackground(Background.EMPTY);
+
         return button;
     }
 

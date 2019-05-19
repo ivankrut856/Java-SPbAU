@@ -228,20 +228,4 @@ public class Tank {
             System.out.println(view.getX());
         }
     }
-
-    public static class TankCallbackManager {
-        private Consumer<Projectile> onTankFire;
-        private Consumer<Projectile> onDestroy;
-        private Function<Projectile, Boolean> checkProjectileCrush;
-        private Function<Tank, Boolean> checkTankCrush;
-        private Function<Tank, Integer> getTankGroundLevel;
-
-        public TankCallbackManager(Consumer<Projectile> onTankFire, Consumer<Projectile> onDestroy, Function<Projectile, Boolean> checkProjectileCrush, Function<Tank, Boolean> checkTankCrush, Function<Tank, Integer> getTankGroundLevel) {
-            this.onTankFire = onTankFire;
-            this.onDestroy = onDestroy;
-            this.checkProjectileCrush = checkProjectileCrush;
-            this.checkTankCrush = checkTankCrush;
-            this.getTankGroundLevel = getTankGroundLevel;
-        }
-    }
 }
