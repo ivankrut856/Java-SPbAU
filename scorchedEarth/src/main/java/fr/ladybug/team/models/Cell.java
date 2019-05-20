@@ -1,11 +1,13 @@
-package fr.ladybug.team;
+package fr.ladybug.team.models;
 
+
+import fr.ladybug.team.views.CellView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-
+/** Class representing cells in the game world */
 public class Cell {
     private PresenceStatus presenceStatus;
     private int x;
@@ -43,13 +45,17 @@ public class Cell {
         return view;
     }
 
+    /** Update method of the cell. Potentially usefull */
     public void update() {
+        // Sorry, but empty
     }
 
+    /** Adds lister hearing destory event of the cell */
     public void addOnDestroyListener(Consumer<Cell> listener) {
         onDestroyListeners.add(listener);
     }
 
+    /** Actualizes status of the destroyed cell */
     public void destroy() {
         presenceStatus = PresenceStatus.EMPTY;
         getView().chooseTexture(presenceStatus.value);
@@ -58,6 +64,7 @@ public class Cell {
         }
     }
 
+    /** Class representing how alive the cell is. Currently there's two working options */
     public enum PresenceStatus {
         EMPTY (0),
         BOTTOM_HALF (1),

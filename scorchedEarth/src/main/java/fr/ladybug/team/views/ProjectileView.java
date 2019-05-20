@@ -1,9 +1,9 @@
-package fr.ladybug.team;
+package fr.ladybug.team.views;
 
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
-
+/** The render info class for class Projectile */
 public class ProjectileView {
     private Rectangle rectangle;
     private ImagePattern texture;

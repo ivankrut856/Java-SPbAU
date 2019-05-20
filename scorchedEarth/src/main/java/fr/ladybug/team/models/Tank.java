@@ -1,11 +1,16 @@
-package fr.ladybug.team;
+package fr.ladybug.team.models;
 
+import fr.ladybug.team.views.ProjectileView;
+import fr.ladybug.team.views.TankBodyView;
+import fr.ladybug.team.views.TankGunView;
 import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import javafx.scene.shape.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/** Class representing the Tank in the game. Performing all tank related calculation */
 public class Tank {
     private int x;
     private int y;
@@ -13,12 +18,14 @@ public class Tank {
 
     private TankBodyView body;
     private TankGunView gun;
+    private boolean destroyed = false;
 
     private int gunRotationAngle = 0;
 
     private Ammo ammo = Ammo.BALL;
 
     private Model currentGame;
+    /** The list with all actual projectiles */
     private List<Projectile> projectiles = new ArrayList<>();
 
     public Tank(int x, int y, TankBodyView body, TankGunView gun, Model currentGame) {
@@ -37,6 +44,8 @@ public class Tank {
         x += deltaX;
 
         int groundLevel = currentGame.getTankGroundLevel(this);
+        System.out.println("GL: " + groundLevel);
+        System.out.println(y);
 
         if (-1 <= groundLevel && groundLevel <= 0 /* should go up */) {
             y += groundLevel - 1;
@@ -50,11 +59,17 @@ public class Tank {
         }
     }
 
+    /** Methods actualizes the state of the tank */
     public void update() {
+        if (destroyed)
+            return;
         updatePosition();
 
         body.getRectangle().setX(x * Model.CELL_WIDTH);
         body.getRectangle().setY(y * Model.CELL_HEIGHT);
+
+        if (currentGame.confirmOutOfTheWorld(body.getRectangle()))
+            destroy();
 
         gun.chooseTexture(ammo.value);
         gun.getRectangle().setRotate(0);
@@ -67,6 +82,9 @@ public class Tank {
         }
     }
 
+    /** Performs gun rotation of the tank
+     * @param angle the angle in degrees (angle > 0 means rotation clockwise)
+     */
     public void rotateGun(int angle) {
         gunRotationAngle += angle;
         if (gunRotationAngle > 90)
@@ -75,19 +93,20 @@ public class Tank {
             gunRotationAngle = -90;
     }
 
-    public void changeGun() {
+    /** Changes or reloads gun */
+    public synchronized void changeGun() {
         ammo = ammo.change();
     }
 
-    public void fire() {
+    /** Fires the chosen ammo */
+    public synchronized void fire() {
         if (ammo == Ammo.EMPTY)
             return;
 
-        System.out.println("Fire at " + (x + 2.4) + ": " + y);
         Projectile current = new Projectile(Math.toRadians(-gunRotationAngle + 90),
                 x + 2.4, y,
                 ammo,
-                new ProjectileView(new Rectangle(5, 12), gun.getTexture()),
+                new ProjectileView(new Rectangle(5, 12), gun.getTextures().get(ammo.value)),
                 (projectile -> {
                     currentGame.onProjectileDestroy(projectile);
                     Platform.runLater(() -> projectiles.remove(projectile));
@@ -122,6 +141,7 @@ public class Tank {
         return body;
     }
 
+    /** Ammo type class. Represents different ammo and changing strategy */
     public enum Ammo {
         EMPTY(0, 0, 0),
         BALL(1, 10, 2),
@@ -145,7 +165,8 @@ public class Tank {
             return explosionRange;
         }
 
-        Ammo change() {
+        /** Return next ammo type in order (or first if there is empty now) */
+        public Ammo change() {
             switch (this) {
                 case FIREBALL:
                 case EMPTY:
@@ -156,5 +177,17 @@ public class Tank {
 
             }
         }
+
+    }
+
+    /** On tank destroy method */
+    public void destroy() {
+        destroyed = true;
+        Platform.runLater(() -> {
+            var alert = new Alert(Alert.AlertType.INFORMATION, "You died!");
+            alert.setTitle("Dead!");
+            alert.showAndWait();
+            Platform.exit();
+        });
     }
 }

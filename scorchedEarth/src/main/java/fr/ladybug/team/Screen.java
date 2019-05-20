@@ -1,5 +1,6 @@
 package fr.ladybug.team;
 
+import fr.ladybug.team.models.Model;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -27,20 +28,25 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static fr.ladybug.team.Model.*;
+import static fr.ladybug.team.models.Model.*;
 
+/**
+ * Main application. Works with screen and render
+ */
 public class Screen extends Application {
 
     public static void main(String[] args) {
         launch(args);
     }
 
+    /** Update is performed each 50ms */
     private final long UPDATE_RATE = TimeUnit.MILLISECONDS.toNanos(50);
 
     private Group group;
     private Model model;
 
     @Override
+    /** Main entry point of the application */
     public void start(Stage stage) throws Exception {
         group = new Group();
         final Scene scene = new Scene(group, CELL_WIDTH * CELL_COLUMNS_COUNT, CELL_HEIGHT * CELL_ROWS_COUNT);
@@ -103,50 +109,12 @@ public class Screen extends Application {
         }
     }
 
-//    private void loadImages() {
-//
-
-//        for (int i = 0; i < 4; i++) {
-//            cellStatesTexture[i] = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream(String.format("cell-state-%d.png", i))));
-//        }
-//        for (int i = 0; i < 3; i++) {
-//            tankGunTextures[i] = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream(String.format("tank-part-gun%d.png", i))));
-//        }
-//        tankBodyTexture = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream("tank-part-body.png")));
-//        targetTexture = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream("target.png")));
-//    }
-
-//    private void update() {
-//        System.out.println("Update tick");
-//        for (var currentCell : cellControllers) {
-//            currentCell.update();
-//        }
-//        tankController.update();
-//    }
-
     public Group getGroup() {
         return group;
     }
 
-//    private List<Rectangle> getCells() {
-//        List<Rectangle> cells = new ArrayList<>();
-//        for (int i = 0; i < CELL_ROWS_COUNT; i++) {
-//            for (int j = 0; j < CELL_COLUMNS_COUNT; j++) {
-//                var x = j * CELL_HEIGHT;
-//                var y = i * CELL_WIDTH;
-//                var cell = new Rectangle(CELL_WIDTH, CELL_HEIGHT, Color.color(0.5, 1, 0.5, ((double)i / CELL_ROWS_COUNT)));
-//                cell.setX(x);
-//                cell.setY(y);
-//                cell.setStrokeType(StrokeType.INSIDE);
-////                cell.setStroke(Color.BLACK);
-//
-//                cells.add(cell);
-//            }
-//        }
-//        return cells;
-//    }
-
-    private Button getExitButton() {
+    /** Exit button init */
+    private static Button getExitButton() {
         var redCrossImage = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream("redCross5.png")));
 
         var button = new Button();
@@ -163,7 +131,8 @@ public class Screen extends Application {
         return button;
     }
 
-    private Button getHelpButton() {
+    /** Help button init */
+    private static Button getHelpButton() {
         var questionMarkImage = new Image(Objects.requireNonNull(Screen.class.getClassLoader().getResourceAsStream("questionMark.png")));
 
         var button = new Button();
@@ -186,17 +155,5 @@ public class Screen extends Application {
 
         return button;
     }
-
-//    private Tank getTankController() {
-//        var tankBodyTexturePattern = new ImagePattern(tankBodyTexture);
-//        Rectangle tankBody = new Rectangle(5 * CELL_WIDTH, 3 * CELL_WIDTH, tankBodyTexturePattern);
-//        Rectangle tankGun = new Rectangle(5, 12);
-//        return new Tank(0, CELL_ROWS_COUNT - 8, tankBody, tankGun,
-//                TextureSet.getTextureSet(Arrays.asList(tankGunTextures)), this);
-//    }
-
-
-
-
 
 }

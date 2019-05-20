@@ -1,5 +1,14 @@
-package fr.ladybug.team;
+package fr.ladybug.team.models;
 
+import fr.ladybug.team.FieldMap;
+import fr.ladybug.team.models.Cell;
+import fr.ladybug.team.models.Projectile;
+import fr.ladybug.team.models.Tank;
+import fr.ladybug.team.models.Target;
+import fr.ladybug.team.views.CellView;
+import fr.ladybug.team.views.TankBodyView;
+import fr.ladybug.team.views.TankGunView;
+import fr.ladybug.team.views.TargetView;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -13,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+/** Main game model holding together all interactive parts of the game world */
 public class Model {
     public static final int CELL_WIDTH = 10;
     public static final int CELL_HEIGHT = 10;
@@ -79,6 +89,7 @@ public class Model {
         target = new Target(Objects.requireNonNull(theCell), new TargetView(new Rectangle(CELL_WIDTH, CELL_HEIGHT), targetTexture));
     }
 
+    /** Actualizes the states of the game objects */
     public void update() {
         for (var currentCell : cells) {
             currentCell.update();
@@ -98,10 +109,12 @@ public class Model {
         return target;
     }
 
+    /** Callback performing update subscription of the generated projectiles */
     public void onTankFire(Projectile projectile) {
         drawableGroup.getChildren().add(projectile.getView().getRectangle());
     }
 
+    /** Callback performing update unsubscription of the generated projectiles and outer effects after destroy */
     public void onProjectileDestroy(Projectile projectile) {
         drawableGroup.getChildren().remove(projectile.getView().getRectangle());
         Point2D centerOfProjectile = centerOfRectangle(projectile.getView().getRectangle());
@@ -116,19 +129,23 @@ public class Model {
         }
     }
 
+    private boolean inRange(int x, int y) {
+        return (x >= 0 && x < CELL_COLUMNS_COUNT && y >= 0 && y < CELL_ROWS_COUNT);
+    }
+
+    /** Calculates the tank ground level in the world */
     public int getTankGroundLevel(Tank tank) {
         int min = 100;
         for (int x = tank.getX(); x < tank.getX() + 5; x++) {
             int y = tank.getY();
-            while (y < CELL_ROWS_COUNT && cells.get(y * CELL_COLUMNS_COUNT + x).getPresenceStatus() == Cell.PresenceStatus.EMPTY)
+            while (y < CELL_ROWS_COUNT + 100 && (!inRange(x, y) || cells.get(y * CELL_COLUMNS_COUNT + x).getPresenceStatus() == Cell.PresenceStatus.EMPTY))
                 y++;
-            if (y == CELL_ROWS_COUNT)
-                y = CELL_ROWS_COUNT + 10;
             min = Math.min(min, y - tank.getY() - 2);
         }
         return min;
     }
 
+    /** Checks for collision of the tank */
     public boolean checkTankCrush(Tank tank) {
         var rectangle = tank.getBody().getRectangle();
         rectangle.setX(tank.getX() * CELL_WIDTH);
@@ -145,6 +162,7 @@ public class Model {
         return false;
     }
 
+    /** Checks for collision of the projectiles */
     public boolean checkProjectileCrush(Projectile projectile) {
         var rectangle = projectile.getView().getRectangle();
         if (confirmOutOfTheWorld(rectangle))
@@ -165,7 +183,9 @@ public class Model {
         return new Point2D(rectangle.getX() + rectangle.getWidth() / 2, rectangle.getY() + rectangle.getHeight() / 2);
     }
 
-    private boolean confirmOutOfTheWorld(Rectangle rectangle) {
-        return rectangle.getX() > CELL_COLUMNS_COUNT * CELL_WIDTH || rectangle.getX() < 0 || rectangle.getY() > CELL_ROWS_COUNT * CELL_HEIGHT;
+    /** Checks for leaving the world */
+    public boolean confirmOutOfTheWorld(Rectangle rectangle) {
+        final int GAP = 100;
+        return rectangle.getX() > CELL_COLUMNS_COUNT * CELL_WIDTH + GAP || rectangle.getX() < -GAP || rectangle.getY() > CELL_ROWS_COUNT * CELL_HEIGHT + GAP;
     }
 }

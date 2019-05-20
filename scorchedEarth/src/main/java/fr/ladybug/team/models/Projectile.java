@@ -1,11 +1,14 @@
-package fr.ladybug.team;
+package fr.ladybug.team.models;
 
+import fr.ladybug.team.models.Tank;
+import fr.ladybug.team.views.ProjectileView;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/** Class representing projectiles of the tank's gun in the world. Performs some physics related to shots */
 public class Projectile {
     public Projectile(double angle, double x, double y, Tank.Ammo ammo, ProjectileView view, Consumer<Projectile> onDestroy, Function<Projectile, Boolean> checkCrush) {
         this.x = x;
@@ -16,6 +19,9 @@ public class Projectile {
         this.dy = Math.sin(angle) * speed;
         this.onDestroy = onDestroy;
         this.checkCrush = checkCrush;
+
+        if (ammo == Tank.Ammo.EMPTY)
+            throw new RuntimeException("WTF");
 
         this.view = view;
         updateView();
@@ -30,6 +36,7 @@ public class Projectile {
     private double dy;
     private Tank.Ammo ammo;
 
+    /** Empirical data of earth gravity in the game world */
     private static double EARTH_GRAVITY_DY = 0.2;
 
     private double toRotationAngle(double mathAngle) {
@@ -40,10 +47,12 @@ public class Projectile {
         return view;
     }
 
+    /** Retunrs explosion range of the chosen ammo */
     public double getExplosionRange() {
         return ammo.explosionRange();
     }
 
+    /** Updates physical properties and render in time */
     public void update() {
         x += dx / 10;
         y -= dy / 10;

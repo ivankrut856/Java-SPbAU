@@ -1,12 +1,12 @@
-package fr.ladybug.team;
+package fr.ladybug.team.models;
 
+import fr.ladybug.team.views.TargetView;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import javafx.scene.image.Image;
-import javafx.scene.paint.ImagePattern;
-import javafx.scene.shape.Rectangle;
 
+/** Class representing the target of the game. It should be destroyed to win */
 public class Target {
+    /** The cell in which the target is placed */
     private Cell myCell;
     private TargetView view;
 
@@ -22,6 +22,10 @@ public class Target {
         return view;
     }
 
+    /**
+     * The callback method. It is called when the host cell is blown up
+     * @param where the cell from where it was place on the blow up moment
+     */
     public void destroy(Cell where) {
         Platform.runLater(() -> {
             var alert = new Alert(Alert.AlertType.INFORMATION, "You beat them!");
