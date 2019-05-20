@@ -1,46 +1,33 @@
 package fr.ladybug.team;
 
 import javafx.application.Platform;
-import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class Tank {
     private int x;
     private int y;
     private int deltaX = 0;
-//    private int deltaY = 0;
-    private Rectangle associatedBody;
-    private Rectangle associatedGun;
+
+    private TankBodyView body;
+    private TankGunView gun;
 
     private int gunRotationAngle = 0;
 
-    private TextureSet gunTextures;
-    private AmmoStatus ammoStatus = AmmoStatus.BALL;
+    private Ammo ammo = Ammo.BALL;
 
-    private Screen currentGame;
+    private Model currentGame;
     private List<Projectile> projectiles = new ArrayList<>();
 
-    public Tank(int x, int y, Rectangle associatedBody, Rectangle associatedGun, TextureSet gunTextures, Screen currentGame) {
+    public Tank(int x, int y, TankBodyView body, TankGunView gun, Model currentGame) {
         this.x = x;
         this.y = y;
-        this.associatedBody = associatedBody;
-        this.associatedGun = associatedGun;
+        this.body = body;
+        this.gun = gun;
 
-        if (gunTextures.getPatterns().size() < 3)
-            throw new IllegalArgumentException("Tank texture set wrong size");
-        this.gunTextures = gunTextures;
         this.currentGame = currentGame;
-
-        fillGun();
-    }
-
-    private void fillGun() {
-        associatedGun.setFill(gunTextures.getPatterns().get(ammoStatus.value));
     }
 
     private void updatePosition() {
@@ -65,14 +52,15 @@ public class Tank {
 
     public void update() {
         updatePosition();
-        fillGun();
-        associatedBody.setX(x * Screen.CELL_WIDTH);
-        associatedBody.setY(y * Screen.CELL_HEIGHT);
 
-        associatedGun.setRotate(0);
-        associatedGun.setX(x * Screen.CELL_WIDTH + 22);
-        associatedGun.setY(y * Screen.CELL_HEIGHT);
-        associatedGun.setRotate(gunRotationAngle);
+        body.getRectangle().setX(x * Model.CELL_WIDTH);
+        body.getRectangle().setY(y * Model.CELL_HEIGHT);
+
+        gun.chooseTexture(ammo.value);
+        gun.getRectangle().setRotate(0);
+        gun.getRectangle().setX(x * Model.CELL_WIDTH + 22);
+        gun.getRectangle().setY(y * Model.CELL_HEIGHT);
+        gun.getRectangle().setRotate(gunRotationAngle);
 
         for (var projectile : projectiles) {
             projectile.update();
@@ -88,24 +76,24 @@ public class Tank {
     }
 
     public void changeGun() {
-        ammoStatus = ammoStatus.change();
+        ammo = ammo.change();
     }
 
     public void fire() {
-        if (ammoStatus == AmmoStatus.EMPTY)
+        if (ammo == Ammo.EMPTY)
             return;
 
-        System.out.println(associatedGun.getY());
+        System.out.println("Fire at " + (x + 2.4) + ": " + y);
         Projectile current = new Projectile(Math.toRadians(-gunRotationAngle + 90),
-                associatedGun.getX(), associatedGun.getY(),
-                ammoStatus,
-                gunTextures.getPatterns().get(ammoStatus.value),
+                x + 2.4, y,
+                ammo,
+                new ProjectileView(new Rectangle(5, 12), gun.getTexture()),
                 (projectile -> {
                     currentGame.onProjectileDestroy(projectile);
                     Platform.runLater(() -> projectiles.remove(projectile));
                 }),
                 (projectile) -> currentGame.checkProjectileCrush(projectile));
-        ammoStatus = AmmoStatus.EMPTY;
+        ammo = Ammo.EMPTY;
         projectiles.add(current);
         currentGame.onTankFire(current);
     }
@@ -126,23 +114,15 @@ public class Tank {
         this.deltaX = deltaX;
     }
 
-//    public int getDeltaY() {
-//        return deltaY;
-//    }
-//
-//    public void setDeltaY(int deltaY) {
-//        this.deltaY = deltaY;
-//    }
-
-    public Rectangle getAssociatedGun() {
-        return associatedGun;
+    public TankGunView getGun() {
+        return gun;
     }
 
-    public Rectangle getAssociatedBody() {
-        return associatedBody;
+    public TankBodyView getBody() {
+        return body;
     }
 
-    private enum AmmoStatus {
+    public enum Ammo {
         EMPTY(0, 0, 0),
         BALL(1, 10, 2),
         FIREBALL(2, 5, 4);
@@ -150,12 +130,22 @@ public class Tank {
         private int value;
         private double startSpeed;
         private double explosionRange;
-        AmmoStatus(int value, double startSpeed, double explosionRange) {
+
+        Ammo(int value, double startSpeed, double explosionRange) {
             this.value = value;
             this.startSpeed = startSpeed;
             this.explosionRange = explosionRange;
         }
-        AmmoStatus change() {
+
+        public double startSpeed() {
+            return startSpeed;
+        }
+
+        public double explosionRange() {
+            return explosionRange;
+        }
+
+        Ammo change() {
             switch (this) {
                 case FIREBALL:
                 case EMPTY:
@@ -165,67 +155,6 @@ public class Tank {
                     return FIREBALL;
 
             }
-        }
-    }
-
-    public static class Projectile {
-        private Projectile(double angle, double x, double y, AmmoStatus ammo, ImagePattern texture, Consumer<Projectile> onDestroy, Function<Projectile, Boolean> checkCrush) {
-            this.x = x;
-            this.y = y;
-            this.ammo = ammo;
-            var speed = ammo.startSpeed;
-            this.dx = Math.cos(angle) * speed;
-            this.dy = Math.sin(angle) * speed;
-            this.onDestroy = onDestroy;
-            this.checkCrush = checkCrush;
-
-            view = new Rectangle(5, 12, texture);
-            updateView();
-        }
-
-        private Consumer<Projectile> onDestroy;
-        private Function<Projectile, Boolean> checkCrush;
-        private Rectangle view;
-        private double x;
-        private double y;
-        private double dx;
-        private double dy;
-        private AmmoStatus ammo;
-
-        private static double EARTH_GRAVITY_DY = 0.2;
-
-        private double toRotationAngle(double mathAngle) {
-            return Math.toDegrees(-mathAngle + Math.PI/2);
-        }
-
-        public Rectangle getRectangle() {
-            return view;
-        }
-
-        public double getExplosionRange() {
-            return ammo.explosionRange;
-        }
-
-        private void update() {
-            x += dx;
-            y -= dy;
-            dy -= EARTH_GRAVITY_DY;
-
-
-
-            boolean crushed = checkCrush.apply(this);
-            if (crushed) {
-                onDestroy.accept(this);
-            }
-
-            updateView();
-        }
-
-        private void updateView() {
-            view.setX(x);
-            view.setY(y);
-            view.setRotate(toRotationAngle(Math.atan2(dy, dx)));
-            System.out.println(view.getX());
         }
     }
 }

@@ -7,27 +7,23 @@ import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
 public class Target {
-    private ImagePattern texture;
     private Cell myCell;
-    private Rectangle rectangle;
+    private TargetView view;
 
-    public Target(Image texture, Cell myCell) {
-        this.texture = new ImagePattern(texture);
-
+    public Target(Cell myCell, TargetView view) {
         this.myCell = myCell;
         myCell.addOnDestroyListener(this::destroy);
-
-        rectangle = new Rectangle(myCell.getAssociatedNode().getX(), myCell.getAssociatedNode().getY(), myCell.getAssociatedNode().getWidth(), myCell.getAssociatedNode().getHeight());
-        rectangle.setFill(this.texture);
+        view.getRectangle().setX(myCell.getX() * Model.CELL_WIDTH);
+        view.getRectangle().setY(myCell.getY() * Model.CELL_HEIGHT);
+        this.view = view;
     }
 
-    public Rectangle getRectangle() {
-        return rectangle;
+    public TargetView getView() {
+        return view;
     }
 
     public void destroy(Cell where) {
         Platform.runLater(() -> {
-
             var alert = new Alert(Alert.AlertType.INFORMATION, "You beat them!");
             alert.setTitle("Victory!");
             alert.showAndWait();
