@@ -2,7 +2,6 @@ package fr.ladybug.team;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -87,6 +86,11 @@ public class Server {
                     sc.configureBlocking(false);
                     sc.register(selector, SelectionKey.
                             OP_READ);
+                    try (var os = new DataOutputStream(sc.socket().getOutputStream())) {
+                        os.writeChars("Connected");
+                    } catch (IOException e) {
+                        //whatever
+                    }
                     System.out.println("Connection Accepted: " + sc.getLocalAddress() + "\n");
                 } else if (key.isReadable()) {
                     processConnection(key);
@@ -98,71 +102,50 @@ public class Server {
     }
 
     private void processConnection(SelectionKey key) {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
         SocketChannel channel = (SocketChannel)key.channel();
-        int bytesRead = -1;
-        try {
-            bytesRead = channel.read(buffer);
-        } catch (IOException e) {
-            System.err.println("IOException reading from channel.");
-        }
-        int num = buffer.getInt();
-        String query = "";
-        try {
-            query = new String(buffer.array(), "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-        }
-        System.out.println("Received query is " + query);
-        try {
-            if (num == 1) {
-                executeGet(channel, query.substring(1));
-            } else if (num == 2) {
-                executeList(channel, query.substring(1));
+        try (var inputStream = new DataInputStream(channel.socket().getInputStream())) {
+            int queryNumber = inputStream.readInt();
+            String query = inputStream.readUTF();
+            if (queryNumber == 1) {
+                executeGet(new DataOutputStream(channel.socket().getOutputStream()), query.substring(1));
+            } else if (queryNumber == 2) {
+                executeList(new DataOutputStream(channel.socket().getOutputStream()), query.substring(1));
             } else {
-                // wrong query
+                System.err.println("Malformed query.");
             }
         } catch (IOException e) {
-            // exception
+            System.err.println("Socket failed to open IO streams.");
         }
     }
 
-    private void executeGet(SocketChannel output, String path) throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(1024);
+    private void executeGet(DataOutputStream output, String path) throws IOException {
         var file = new File(path);
         if (!file.isFile()) {
-            buf.putInt(-1);
-            output.write(buf);
+            output.writeInt(-1);
             return;
         }
 
-        buf.putLong(file.length());
-        output.write(buf);
+        output.writeLong(file.length());
         try (var input = new DataInputStream(new FileInputStream(file))) {
             byte[] buffer = new byte[1024];
             for (int read = input.read(buffer); read != -1; read = input.read(buffer)) {
-                output.write(ByteBuffer.wrap(buffer));
+                output.write(buffer, 0, read);
             }
         }
     }
 
-    private void executeList(SocketChannel output, String path) throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(1024);
+    private void executeList(DataOutputStream output, String path) throws IOException {
         var file = new File(path);
         if (!file.exists()) {
-//            output.writeInt(-1);
-            buf.putInt(-1);
-            output.write(buf);
+            output.writeInt(-1);
             return;
         }
 
         ArrayList<String> result = new ArrayList<>();
         int size = getDirectoryTree(file, result);
-//        output.writeInt(size);
-        buf.putInt(size);
-        output.write(buf);
+        output.writeInt(size);
         for (var info : result) {
-//            output.writeUTF(info);
-            output.write(ByteBuffer.wrap(info.getBytes()));
+            output.writeUTF(info);
         }
     }
 
