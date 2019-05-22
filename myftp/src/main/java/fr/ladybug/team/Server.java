@@ -1,4 +1,4 @@
-package PACKAGE_NAME;
+package fr.ladybug.team;
 
 public class Server {
 }
