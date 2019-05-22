@@ -1,5 +1,4 @@
 package fr.ladybug.team;
 
-public class Server {
-
+public class Client {
 }
