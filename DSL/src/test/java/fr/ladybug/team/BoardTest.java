@@ -1,6 +1,5 @@
 package fr.ladybug.team;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,13 +11,14 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BoardTest {
-    private static Board board;
+    private Board board;
+    private int baseTestSize = 4;
 
-    @BeforeAll
-    public static void boardInit() {
-        board = new Board(4, () -> {});
+    @BeforeEach
+    public void boardInit() {
+        assertDoesNotThrow(() -> board = new Board(baseTestSize, () -> {}));
         var numbers = new ArrayList<Integer>();
-        for (int i = 0; i < 4 * 4 / 2; i++) {
+        for (int i = 0; i < baseTestSize * baseTestSize / 2; i++) {
             numbers.add(i);
             numbers.add(i);
         }
@@ -41,13 +41,13 @@ class BoardTest {
     public void testDifferentOnes() {
         Lock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
-        board = new Board(4, () -> {
+        board = new Board(baseTestSize, () -> {
             lock.lock();
             condition.signalAll();
             lock.unlock();
         });
         var numbers = new ArrayList<Integer>();
-        for (int i = 0; i < 4 * 4 / 2; i++) {
+        for (int i = 0; i < baseTestSize * baseTestSize / 2; i++) {
             numbers.add(i);
             numbers.add(i);
         }
@@ -64,9 +64,16 @@ class BoardTest {
 
     @Test
     void testWin() {
-        for (int i = 0; i < 4 * 4; i++) {
-            board.onClick(i / 4, i % 4);
+        for (int i = 0; i < baseTestSize * baseTestSize; i++) {
+            board.onClick(i / baseTestSize, i % baseTestSize);
         }
         assertTrue(board.hasWon());
+    }
+
+    @Test
+    void tesBoardSizeArguments() {
+        assertThrows(IllegalArgumentException.class, () -> new Board(0, null));
+        assertThrows(IllegalArgumentException.class, () -> new Board(-1, null));
+        assertThrows(IllegalArgumentException.class, () -> new Board(1, null));
     }
 }

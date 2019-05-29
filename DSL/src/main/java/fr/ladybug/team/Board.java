@@ -22,8 +22,8 @@ public class Board {
      * @param updater the callback of field changes
      */
     public Board(int n, Runnable updater) {
-        if (n % 2 != 0)
-            throw new IllegalArgumentException("N must be even");
+        if (n % 2 != 0 || n <= 0)
+            throw new IllegalArgumentException("N must be positive even number");
 
         this.n = n;
         left = n * n;
