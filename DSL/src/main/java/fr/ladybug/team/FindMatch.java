@@ -16,15 +16,19 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 
+/** Main JavaFx application class */
 public class FindMatch extends Application {
     public static void main(String[] args) {
         launch(args);
     }
 
-    int n;
+    /** The size of the field */
+    private int n;
+
     private Button[][] buttons;
     private Board board;
-    @Override
+
+    /** Main init method of JavaFX */
     public void start(Stage primaryStage) {
 
         boolean firstTime = true;
@@ -98,29 +102,32 @@ public class FindMatch extends Application {
 
 
         Scene scene = new Scene(pane);
-        primaryStage.setMinHeight(200);
-        primaryStage.setMinWidth(200);
+        primaryStage.setMinHeight(n * 80);
+        primaryStage.setMinWidth(n * 80);
         primaryStage.setTitle("Find match");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    public void stateUpdate() {
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                buttons[i][j].setText(board.getText(i, j));
-                buttons[i][j].setDisable(!board.checkHidden(i, j));
+    /** Main callback for field changes */
+    private void stateUpdate() {
+        Platform.runLater(() -> {
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    buttons[i][j].setText(board.getText(i, j));
+                    buttons[i][j].setDisable(!board.checkHidden(i, j));
+                }
             }
-        }
 
-        if (board.hasWon()) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Information Dialog");
-            alert.setHeaderText("I have a great message for you!");
-            alert.setContentText("You won");
-            alert.showAndWait();
+            if (board.hasWon()) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Information Dialog");
+                alert.setHeaderText("I have a great message for you!");
+                alert.setContentText("You won");
+                alert.showAndWait();
 
-            Platform.exit();
-        }
+                Platform.exit();
+            }
+        });
     }
 }
