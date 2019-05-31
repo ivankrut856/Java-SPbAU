@@ -38,17 +38,6 @@ public class FieldMap {
         }
     }
 
-//    /**
-//     * Returns whether the target is place at the cell
-//     * @param i the row number of the cell
-//     * @param j the column number of the cell
-//     * @return the cell's state: either holding target or not
-//     */
-//    public static boolean isTarget(int i, int j) {
-//        int mask = image.getRGB(j, i);
-//        return ((mask & 0x0000ff00) ==  0x0000ff00);
-//    }
-
     public enum MapState {
         EMPTY,
         BLOCK,

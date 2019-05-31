@@ -20,6 +20,14 @@ repositories {
     mavenCentral()
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': mainClassName
+        )
+    }
+}
+
 dependencies {
     testCompile('org.junit.jupiter:junit-jupiter-api:5.3.2')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.2')
