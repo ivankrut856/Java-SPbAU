@@ -40,7 +40,7 @@ public class Projectile {
     private static double EARTH_GRAVITY_DY = 0.2;
 
     private double toRotationAngle(double mathAngle) {
-        return Math.toDegrees(-mathAngle + Math.PI/2);
+        return Math.toDegrees(-mathAngle + Math.PI / 2);
     }
 
     public ProjectileView getView() {
