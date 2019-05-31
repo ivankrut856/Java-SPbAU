@@ -8,6 +8,11 @@ import java.util.List;
 
 /** The render info class for tank's gun */
 public class TankGunView {
+    public static int TANK_GUN_TEXTURE_DEFAULT_WIDTH = 5;
+    public static int TANK_GUN_TEXTURE_DEFAULT_HEIGHT = 12;
+
+    public static int GUN_TEXTURE_X_OFFSET = 24;
+
     private Rectangle rectangle;
     private List<ImagePattern> textures;
     private int currentTextureIndex = 0;

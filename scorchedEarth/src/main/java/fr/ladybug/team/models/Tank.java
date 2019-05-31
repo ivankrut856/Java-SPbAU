@@ -10,6 +10,9 @@ import javafx.scene.shape.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
+import static fr.ladybug.team.models.Model.CELL_WIDTH;
+import static fr.ladybug.team.views.TankGunView.*;
+
 /** Class representing the Tank in the game. Performing all tank related calculation */
 public class Tank {
     private int x;
@@ -44,16 +47,14 @@ public class Tank {
         x += deltaX;
 
         int groundLevel = currentGame.getTankGroundLevel(this);
-        System.out.println("GL: " + groundLevel);
-        System.out.println(y);
 
-        if (-1 <= groundLevel && groundLevel <= 0 /* should go up */) {
+        if (-1 <= groundLevel && groundLevel <= 0) {
             y += groundLevel - 1;
         } else if (groundLevel > 1) {
             y++;
         }
 
-        if (currentGame.checkTankCrush(this)) {
+        if (currentGame.checkTankCollision(this)) {
             x = oldX;
             y = oldY;
         }
@@ -65,7 +66,7 @@ public class Tank {
             return;
         updatePosition();
 
-        body.getRectangle().setX(x * Model.CELL_WIDTH);
+        body.getRectangle().setX(x * CELL_WIDTH);
         body.getRectangle().setY(y * Model.CELL_HEIGHT);
 
         if (currentGame.confirmOutOfTheWorld(body.getRectangle()))
@@ -73,7 +74,7 @@ public class Tank {
 
         gun.chooseTexture(ammo.value);
         gun.getRectangle().setRotate(0);
-        gun.getRectangle().setX(x * Model.CELL_WIDTH + 22);
+        gun.getRectangle().setX(x * CELL_WIDTH + 22);
         gun.getRectangle().setY(y * Model.CELL_HEIGHT);
         gun.getRectangle().setRotate(gunRotationAngle);
 
@@ -104,9 +105,9 @@ public class Tank {
             return;
 
         Projectile current = new Projectile(Math.toRadians(-gunRotationAngle + 90),
-                x + 2.4, y,
+                x + GUN_TEXTURE_X_OFFSET / CELL_WIDTH, y,
                 ammo,
-                new ProjectileView(new Rectangle(5, 12), gun.getTextures().get(ammo.value)),
+                new ProjectileView(new Rectangle(TANK_GUN_TEXTURE_DEFAULT_WIDTH, TANK_GUN_TEXTURE_DEFAULT_HEIGHT), gun.getTextures().get(ammo.value)),
                 (projectile -> {
                     currentGame.onProjectileDestroy(projectile);
                     Platform.runLater(() -> projectiles.remove(projectile));

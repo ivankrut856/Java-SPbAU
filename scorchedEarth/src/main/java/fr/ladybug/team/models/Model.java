@@ -1,26 +1,25 @@
 package fr.ladybug.team.models;
 
 import fr.ladybug.team.FieldMap;
-import fr.ladybug.team.models.Cell;
-import fr.ladybug.team.models.Projectile;
-import fr.ladybug.team.models.Tank;
-import fr.ladybug.team.models.Target;
 import fr.ladybug.team.views.CellView;
 import fr.ladybug.team.views.TankBodyView;
 import fr.ladybug.team.views.TankGunView;
 import fr.ladybug.team.views.TargetView;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
-import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import static fr.ladybug.team.views.TankBodyView.TANK_BODY_TEXTURE_DEFAULT_HEIGHT;
+import static fr.ladybug.team.views.TankBodyView.TANK_BODY_TEXTURE_DEFAULT_WIDTH;
+import static fr.ladybug.team.views.TankGunView.TANK_GUN_TEXTURE_DEFAULT_HEIGHT;
+import static fr.ladybug.team.views.TankGunView.TANK_GUN_TEXTURE_DEFAULT_WIDTH;
 
 /** Main game model holding together all interactive parts of the game world */
 public class Model {
@@ -28,6 +27,11 @@ public class Model {
     public static final int CELL_HEIGHT = 10;
     public static final int CELL_COLUMNS_COUNT = 80;
     public static final int CELL_ROWS_COUNT = 60;
+
+    public static final int MOVE_SPEED = 1;
+    public static final int SINGLE_ROTATION_ANGLE = 10;
+
+    public static final int MINIMUM_GROUND_LEVEL = 100;
 
     private Tank tank;
     private List<Cell> cells;
@@ -52,7 +56,7 @@ public class Model {
         cells = new ArrayList<>();
         for (int i = 0; i < CELL_ROWS_COUNT; i++) {
             for (int j = 0; j < CELL_COLUMNS_COUNT; j++) {
-                var status = FieldMap.getState(i, j) ? Cell.PresenceStatus.FULL : Cell.PresenceStatus.EMPTY;
+                var status = FieldMap.getState(i, j) != FieldMap.MapState.EMPTY ? Cell.PresenceStatus.FULL : Cell.PresenceStatus.EMPTY;
                 var rectangle = new Rectangle(j * CELL_WIDTH, i * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
                 var currentCell = new Cell(j, i, status, new CellView(rectangle, Arrays.asList(cellStatesTexture)));
                 cells.add(currentCell);
@@ -63,15 +67,20 @@ public class Model {
     private void tankInit() {
         var tankBodyTexture = new ImagePattern(
                 new Image(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream("tank-part-body.png"))));
-        var tankBody = new TankBodyView(new Rectangle(5 * CELL_WIDTH, 3 * CELL_HEIGHT), tankBodyTexture);
+        var tankBody = new TankBodyView(new Rectangle(TANK_BODY_TEXTURE_DEFAULT_WIDTH, TANK_BODY_TEXTURE_DEFAULT_HEIGHT), tankBodyTexture);
 
         var tankGunTextures = new ArrayList<ImagePattern>();
         for (int i = 0; i < 3; i++) {
             tankGunTextures.add(new ImagePattern(
                     new Image(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream(String.format("tank-part-gun%d.png", i))))));
         }
-        var tankGun = new TankGunView(new Rectangle(5, 12), tankGunTextures);
-        tank = new Tank(0, CELL_ROWS_COUNT - 8, tankBody, tankGun, this);
+        var tankGun = new TankGunView(new Rectangle(TANK_GUN_TEXTURE_DEFAULT_WIDTH, TANK_GUN_TEXTURE_DEFAULT_HEIGHT), tankGunTextures);
+
+        int startYPosition = CELL_ROWS_COUNT;
+        while (FieldMap.getState(startYPosition - 1, 0) != FieldMap.MapState.EMPTY) {
+            startYPosition--;
+        }
+        tank = new Tank(0, startYPosition - TANK_BODY_TEXTURE_DEFAULT_HEIGHT / CELL_HEIGHT, tankBody, tankGun, this);
     }
 
     private void targetInit() {
@@ -81,7 +90,7 @@ public class Model {
         Cell theCell = null;
         for (int i = 0; i < CELL_ROWS_COUNT; i++) {
             for (int j = 0; j < CELL_COLUMNS_COUNT; j++) {
-                if (FieldMap.isTarget(i, j)) {
+                if (FieldMap.getState(i, j) == FieldMap.MapState.TARGET) {
                     theCell = cells.get(j + i * CELL_COLUMNS_COUNT);
                 }
             }
@@ -135,18 +144,18 @@ public class Model {
 
     /** Calculates the tank ground level in the world */
     public int getTankGroundLevel(Tank tank) {
-        int min = 100;
-        for (int x = tank.getX(); x < tank.getX() + 5; x++) {
+        int min = MINIMUM_GROUND_LEVEL;
+        for (int x = tank.getX(); x < tank.getX() + (TANK_BODY_TEXTURE_DEFAULT_WIDTH / CELL_WIDTH); x++) {
             int y = tank.getY();
-            while (y < CELL_ROWS_COUNT + 100 && (!inRange(x, y) || cells.get(y * CELL_COLUMNS_COUNT + x).getPresenceStatus() == Cell.PresenceStatus.EMPTY))
+            while (y < CELL_ROWS_COUNT + MINIMUM_GROUND_LEVEL && (!inRange(x, y) || cells.get(y * CELL_COLUMNS_COUNT + x).getPresenceStatus() == Cell.PresenceStatus.EMPTY))
                 y++;
-            min = Math.min(min, y - tank.getY() - 2);
+            min = Math.min(min, y - tank.getY() - (TANK_BODY_TEXTURE_DEFAULT_HEIGHT / CELL_HEIGHT - 1));
         }
         return min;
     }
 
     /** Checks for collision of the tank */
-    public boolean checkTankCrush(Tank tank) {
+    public boolean checkTankCollision(Tank tank) {
         var rectangle = tank.getBody().getRectangle();
         rectangle.setX(tank.getX() * CELL_WIDTH);
         rectangle.setY(tank.getY() * CELL_HEIGHT);

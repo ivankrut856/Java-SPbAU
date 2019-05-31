@@ -21,7 +21,7 @@ public class Cell {
         this.y = y;
         this.presenceStatus = presenceStatus;
         this.view = view;
-        getView().chooseTexture(presenceStatus.value);
+        this.view.chooseTexture(presenceStatus.value);
     }
 
     public PresenceStatus getPresenceStatus() {
@@ -45,9 +45,10 @@ public class Cell {
         return view;
     }
 
-    /** Update method of the cell. Potentially usefull */
+    /** Update method of the cell. Potentially useful */
     public void update() {
-        // Sorry, but empty
+        // Empty at this point of development
+        // Can be useful in the future
     }
 
     /** Adds lister hearing destory event of the cell */

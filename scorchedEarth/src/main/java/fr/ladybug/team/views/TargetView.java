@@ -13,7 +13,6 @@ public class TargetView {
         this.rectangle = rectangle;
         this.texture = texture;
         this.rectangle.setFill(texture);
-        System.out.println(texture.getImage());
     }
 
     public Rectangle getRectangle() {

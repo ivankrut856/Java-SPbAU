@@ -21,7 +21,7 @@ public class Projectile {
         this.checkCrush = checkCrush;
 
         if (ammo == Tank.Ammo.EMPTY)
-            throw new RuntimeException("WTF");
+            throw new RuntimeException("Unexpected error. Tank created EMPTY projectile");
 
         this.view = view;
         updateView();

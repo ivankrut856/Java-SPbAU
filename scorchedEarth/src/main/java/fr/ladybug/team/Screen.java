@@ -82,18 +82,17 @@ public class Screen extends Application {
     }
 
     private void keyPressedHandler(KeyEvent e) {
-        System.out.println(e.getCode().toString());
         if (e.getCode() == KeyCode.D) {
-            model.getTank().setDeltaX(1);
+            model.getTank().setDeltaX(MOVE_SPEED);
         }
         else if (e.getCode() == KeyCode.A) {
-            model.getTank().setDeltaX(-1);
+            model.getTank().setDeltaX(-MOVE_SPEED);
         }
         else if (e.getCode() == KeyCode.W) {
-            model.getTank().rotateGun(10);
+            model.getTank().rotateGun(SINGLE_ROTATION_ANGLE);
         }
         else if (e.getCode() == KeyCode.S) {
-            model.getTank().rotateGun(-10);
+            model.getTank().rotateGun(-SINGLE_ROTATION_ANGLE);
         }
         else if (e.getCode() == KeyCode.R) {
             model.getTank().changeGun();
@@ -122,7 +121,6 @@ public class Screen extends Application {
         button.setPrefSize(2 * CELL_WIDTH, 2 * CELL_HEIGHT);
         button.setLayoutX((CELL_COLUMNS_COUNT - 2) * CELL_WIDTH);
         button.setLayoutY(0);
-
 
         button.setGraphic(new ImageView(redCrossImage));
         button.setBackground(Background.EMPTY);

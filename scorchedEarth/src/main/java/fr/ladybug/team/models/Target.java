@@ -7,14 +7,14 @@ import javafx.scene.control.Alert;
 /** Class representing the target of the game. It should be destroyed to win */
 public class Target {
     /** The cell in which the target is placed */
-    private Cell myCell;
+    private Cell holdingCell;
     private TargetView view;
 
-    public Target(Cell myCell, TargetView view) {
-        this.myCell = myCell;
-        myCell.addOnDestroyListener(this::destroy);
-        view.getRectangle().setX(myCell.getX() * Model.CELL_WIDTH);
-        view.getRectangle().setY(myCell.getY() * Model.CELL_HEIGHT);
+    public Target(Cell holdingCell, TargetView view) {
+        this.holdingCell = holdingCell;
+        holdingCell.addOnDestroyListener(this::destroy);
+        view.getRectangle().setX(holdingCell.getX() * Model.CELL_WIDTH);
+        view.getRectangle().setY(holdingCell.getY() * Model.CELL_HEIGHT);
         this.view = view;
     }
 

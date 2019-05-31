@@ -26,19 +26,32 @@ public class FieldMap {
      * @param j the column number of the cell
      * @return the cell's state: either full or empty
      */
-    public static boolean getState(int i, int j) {
+    public static MapState getState(int i, int j) {
         int mask = image.getRGB(j, i);
-        return ((mask & 0x000000ff) ==  0x000000ff) || isTarget(i, j);
+        switch (mask) {
+            case 0xff0000ff:
+                return MapState.BLOCK;
+            case 0xff00ff00:
+                return MapState.TARGET;
+            default:
+                return MapState.EMPTY;
+        }
     }
 
-    /**
-     * Returns whether the target is place at the cell
-     * @param i the row number of the cell
-     * @param j the column number of the cell
-     * @return the cell's state: either holding target or not
-     */
-    public static boolean isTarget(int i, int j) {
-        int mask = image.getRGB(j, i);
-        return ((mask & 0x0000ff00) ==  0x0000ff00);
+//    /**
+//     * Returns whether the target is place at the cell
+//     * @param i the row number of the cell
+//     * @param j the column number of the cell
+//     * @return the cell's state: either holding target or not
+//     */
+//    public static boolean isTarget(int i, int j) {
+//        int mask = image.getRGB(j, i);
+//        return ((mask & 0x0000ff00) ==  0x0000ff00);
+//    }
+
+    public enum MapState {
+        EMPTY,
+        BLOCK,
+        TARGET
     }
 }

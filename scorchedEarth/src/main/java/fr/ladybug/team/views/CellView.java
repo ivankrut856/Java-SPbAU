@@ -7,13 +7,14 @@ import java.util.List;
 
 /** The render info class for class Cell */
 public class CellView {
+    private static final int DEFAULT_TEXTURE = 0;
     private Rectangle rectangle;
     private List<ImagePattern> textures;
 
     public CellView(Rectangle rectangle, List<ImagePattern> textures) {
         this.textures = textures;
         this.rectangle = rectangle;
-        chooseTexture(0);
+        chooseTexture(DEFAULT_TEXTURE);
     }
 
     public Rectangle getRectangle() {
