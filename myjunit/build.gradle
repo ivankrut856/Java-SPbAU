@@ -18,6 +18,12 @@ dependencies {
     compile group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'fr.ladybug.team.Main'
+    }
+}
+
 test {
     useJUnitPlatform()
     testLogging {

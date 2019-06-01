@@ -4,9 +4,22 @@ import fr.ladybug.team.annotations.*;
 
 import java.util.List;
 
+/** Console application Main class */
 public class Main {
+
+    /** Console application entry point */
     public static void main(String[] args) {
-        Class<?> testClass = Main.class;
+        if (args.length != 1) {
+            System.err.println("Please provide only filepath to test class file");
+            return;
+        }
+        Class<?> testClass = null;
+        try {
+            testClass = Class.forName(args[0]);
+        } catch (ClassNotFoundException e) {
+            System.err.println("No such class");
+            return;
+        }
 
         Tester tester = null;
         try {
@@ -25,8 +38,15 @@ public class Main {
             return;
         }
 
+        if (results.size() == 0) {
+            System.out.println("Class doesn't contain any @Test methods");
+        }
         for (var result: results) {
-            System.out.println(String.format("Test status: %s\nComment: %s", result.getState(), result.getMessage()));
+            String runningTime = result.getRunningTime() != 0 ? String.format("%.3fs", result.getRunningTime() / 1000) : "was not correctly defined";
+            System.out.println(String.format("Test №%d status: %s\nComment: %s\nRunning time: %s",
+                    result.getTestNumber(), result.getState(), result.getMessage(), runningTime));
+
         }
     }
 }
+

@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/** Main JUnit class
+ *  Using to perform construction from the Class instance and to provide results after test() invocation
+ */
 public class Tester {
 
     private List<Method> beforeAll = new ArrayList<>();
@@ -23,6 +26,16 @@ public class Tester {
     private void Tester() {
     }
 
+    /** Factory constructs an instance of Tester from Class instance
+     * The Class instance should meet some requirements:
+     * 1. Class must have public nullary constructor
+     * 2, The constructor must not throw any throwable
+     * 3. Every annotated method must not require arguments to invoke
+     * 4. Every annotated method must be public (otherwise it will be ignored)
+     * @param testClass the class which is to test
+     * @return Tester instance which is ready to test() invocation
+     * @throws TestException the exception is thrown if the Class instance doesn't meet the requirements
+     */
     public static Tester fromClass(Class<?> testClass) throws TestException {
         Tester instance = new Tester();
 
@@ -42,7 +55,7 @@ public class Tester {
         for (var method : methods) {
             if (method.isAnnotationPresent(Test.class)) {
                 if (method.getParameterCount() != 0) {
-                    throw new TestException("All @TestClass methods must have no argument to invoke");
+                    throw new TestException("All @Test methods must have no argument to invoke");
                 }
                 instance.testMethods.add(method);
             }
@@ -75,6 +88,12 @@ public class Tester {
         return instance;
     }
 
+    /**
+     * Provides test results
+     * If the Tester was correctly instantiated and every annotated methods throws no exception then this methods guaranteed not to throw any exception too
+     * @return the set of test results
+     * @throws TestException the exception is thrown only if some annotated method throws an exception during invocation
+     */
     public List<TestResult> test() throws TestException {
         List<TestResult> results = new ArrayList<>();
 
@@ -91,10 +110,12 @@ public class Tester {
             }
         }
 
+        int testNumber = 0;
         for (var method: testMethods) {
+            testNumber++;
             var testAnnotation = method.getAnnotation(Test.class);
             if (testAnnotation.ignore().length > 0) {
-                results.add(new TestResult(TestResult.TestResultState.DISABLED, testAnnotation.ignore()[0]));
+                results.add(new TestResult(testNumber, TestResult.TestResultState.DISABLED, testAnnotation.ignore()[0]));
                 continue;
             }
 
@@ -112,19 +133,31 @@ public class Tester {
             }
 
             List<Class<?>> expectedExceptions = Arrays.asList(testAnnotation.expected());
+            boolean thrown = false;
+            long elapsedTime = 0;
             try {
+                long startTime = System.nanoTime();
                 method.invoke(testClassInstance);
-                results.add(new TestResult(TestResult.TestResultState.SUCCESS, "All correct"));
+                elapsedTime = System.nanoTime() - startTime;
             }
             catch (IllegalAccessException e) {
                 throw new RuntimeException("@Test invocation error. Shouldn't normally happen");
             }
             catch (InvocationTargetException e) {
+                thrown = true;
                 if (expectedExceptions.contains(e.getCause().getClass())) {
-                    results.add(new TestResult(TestResult.TestResultState.SUCCESS, String.format("Expected exception %s happened", e.getCause().getClass().getName())));
+                    results.add(new TestResult(testNumber, TestResult.TestResultState.SUCCESS, String.format("Expected exception %s happened", e.getCause().getClass().getName())));
                 }
                 else {
-                    results.add(new TestResult(TestResult.TestResultState.FAILED, "Unexpected exception:\n" + e.getMessage()));
+                    results.add(new TestResult(testNumber, TestResult.TestResultState.FAILED, "Unexpected exception:\n" + e.getMessage()));
+                }
+            }
+
+            if (!thrown) {
+                if (testAnnotation.expected().length > 0) {
+                    results.add(new TestResult(testNumber, TestResult.TestResultState.FAILED, "No exception was thrown but expected", elapsedTime));
+                } else {
+                    results.add(new TestResult(testNumber, TestResult.TestResultState.SUCCESS, "All correct", elapsedTime));
                 }
             }
 
@@ -159,13 +192,34 @@ public class Tester {
         return results;
     }
 
+
+    /**
+     * Class represents single test's result
+     */
     public static class TestResult {
+        private int testNumber;
         private TestResultState state;
         private String message;
 
-        public TestResult(TestResultState state, String message) {
+        private double runningTime = 0;
+
+        /** Field-wise constructor without running time provided */
+        public TestResult(int testNumber, TestResultState state, String message) {
+            this.testNumber = testNumber;
             this.state = state;
             this.message = message;
+        }
+
+        /** Full field-wise constructor */
+        public TestResult(int testNumber, TestResultState state, String message, long runningTimeInNanos) {
+            this.testNumber = testNumber;
+            this.state = state;
+            this.message = message;
+            this.runningTime = (double)runningTimeInNanos / 1000000;
+        }
+
+        public int getTestNumber() {
+            return testNumber;
         }
 
         public TestResultState getState() {
@@ -176,6 +230,13 @@ public class Tester {
             return message;
         }
 
+        public double getRunningTime() {
+            return runningTime;
+        }
+
+        /**
+         * Enum represents every state which can be achieved during testing for single test
+         */
         public enum TestResultState {
             SUCCESS,
             FAILED,
