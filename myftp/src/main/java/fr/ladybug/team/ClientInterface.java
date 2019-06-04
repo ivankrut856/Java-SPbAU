@@ -46,6 +46,7 @@ public class ClientInterface {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
             switch (command[0]) {
                 case "list": {
                     try {

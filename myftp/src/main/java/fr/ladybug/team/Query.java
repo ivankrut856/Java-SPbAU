@@ -32,5 +32,6 @@ public class Query {
         stream.writeInt(taskName);
         stream.write(bytes, 0, bytes.length);
         stream.flush();
+        System.out.println("sent something");
     }
 }

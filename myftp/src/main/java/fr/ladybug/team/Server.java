@@ -128,7 +128,10 @@ public class Server {
                     SocketChannel sc = serverSocket.accept();
                     sc.configureBlocking(false);
                     sc.register(readSelector, SelectionKey.OP_READ, new TransmissionController(sc));
+                    readSelector.wakeup();
                     System.out.println("Connection Accepted: " + sc.getLocalAddress() + "\n");
+                } else if (key.isReadable()) {
+                    throw new RuntimeException("wtf?");
                 } else {
                     System.err.println("Error: key not supported by server.");
                 }
@@ -139,11 +142,14 @@ public class Server {
 
     public void read() throws IOException {
         while (!Thread.currentThread().isInterrupted()) {
+            System.out.println("kek");
+            readSelector.selectedKeys().clear();
             int readyCount = readSelector.select();
             System.out.println("wanna read");
             if (readyCount == 0) {
                 continue;
             }
+            System.out.println("select rabotaet");
 
             Set<SelectionKey> readyKeys = readSelector.selectedKeys();
             Iterator iterator = readyKeys.iterator();
@@ -168,6 +174,7 @@ public class Server {
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.InputTransmission currentStatus = transmissionController.inputTransmission;
         SocketChannel channel = (SocketChannel)key.channel();
+        System.out.println("zashel");
         if (!currentStatus.hasReadSize()) {
             // read size of next package
             currentStatus.readSize(channel);
@@ -176,6 +183,8 @@ public class Server {
             //TODO checkArgument packageSize >= 0
             currentStatus.readData(channel);
         }
+
+        System.out.println("eshe odin");
         // read happened, check if it ended OK
         if (currentStatus.hasReadData()) {
             // execute something
@@ -189,6 +198,7 @@ public class Server {
             } else {
                 System.err.println("Invalid query type: " + queryType);
             }
+            System.out.println("submitted");
             currentStatus.reset();
         }
     }

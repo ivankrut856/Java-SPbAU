@@ -12,12 +12,8 @@ public class Client {
 
     public Client(String remoteAddress) throws IOException {
         server = new Socket(remoteAddress, 8179);
-        System.out.println(server.isConnected());
-        System.out.println("Connected tipa");
         inputStream = server.getInputStream();
         outputStream = server.getOutputStream();
-        outputStream.write(34);
-
     }
 
     public byte[] makeQuery(Query query) throws IOException {
