@@ -308,7 +308,7 @@ public class Server {
         }
 
         private void addOutputQuery(byte[] data) {
-            checkState(outputTransmission == null); // transmissions should come by one as clients are blocking
+            checkState(outputTransmission == null); // transmissions should come by one as clients are blocking.
             try {
                 channel.register(writeSelector, SelectionKey.OP_WRITE, this);
                 writeSelector.wakeup();
@@ -339,11 +339,7 @@ public class Server {
             }
 
             private void readSize() {
-                try {
-                    channel.read(packageSizeBuffer);
-                } catch (IOException e) {
-                    System.err.println("Failed read from channel: " + e.getMessage());
-                }
+                readCorrectly(new ByteBuffer[]{packageSizeBuffer});
                 if (!packageSizeBuffer.hasRemaining()) {
                     packageSizeBuffer.flip();
                     packageSize = packageSizeBuffer.getInt();
@@ -352,11 +348,19 @@ public class Server {
             }
 
             private void readData() {
-                Objects.requireNonNull(receivedData); //TODO checkState??
+                checkState(receivedData != null); // should be called after packageSize was read.
+                readCorrectly(new ByteBuffer[]{queryTypeBuffer, receivedData});
+            }
+
+            private void readCorrectly(ByteBuffer[] byteBuffers) {
+                long result = 0;
                 try {
-                    channel.read(new ByteBuffer[]{queryTypeBuffer, receivedData});
+                    result = channel.read(byteBuffers);
                 } catch (IOException e) {
                     System.err.println("Failed read from channel: " + e.getMessage());
+                }
+                if (result == -1) {
+                    //do stuff
                 }
             }
 
