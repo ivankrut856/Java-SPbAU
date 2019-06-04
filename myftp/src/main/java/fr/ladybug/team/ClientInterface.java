@@ -30,69 +30,6 @@ public class ClientInterface extends Application {
     private static OutputStream outputStream;
     private static InputStream inputStream;
 
-//    public static void main(String[] args) {
-//        printHelpMessage();
-//
-//        var serverAddress = askAddress();
-//        Client client = null;
-//        try {
-//            client = new Client(serverAddress);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            return;
-//        }
-//
-//        while (true) {
-//            String[] command = askCommand().split("\\s+");
-//            if (command[0].equals("exit")) {
-//                try {
-//                    client.shutdown();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//                break;
-//            }
-//
-//
-//
-//            byte[] response = new byte[0];
-//            try {
-//                response = client.makeQuery(new Query(getIdByName(command[0]), command[1]));
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//
-//            switch (command[0]) {
-//                case "list": {
-//                    try {
-//                        ResponseList responseList = ResponseList.fromBytes(response);
-//                        for (int i = 0; i < responseList.filenames.length; i++) {
-//                            var filename = responseList.filenames[i];
-//                            System.out.println(filename + " " + responseList.isDirectory[i]);
-//                        }
-//                        System.out.println("got response");
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                    break;
-//                }
-//                case "get": {
-//                    try {
-//                        ResponseGet responseGet = ResponseGet.fromBytes(response);
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                    break;
-//                }
-//                default: {
-//                    throw new RuntimeException("Internal consistency fail. Should not normally happen");
-//                }
-//            }
-//        }
-//
-//        System.out.println("Goodbye!");
-//    }
-
     private static int getIdByName(String name) {
         switch (name) {
             case "list":

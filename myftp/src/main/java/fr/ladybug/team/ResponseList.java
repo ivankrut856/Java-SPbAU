@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,6 +19,9 @@ public class ResponseList {
     private int directorySize;
     FileView[] fileViews;
 
+    private boolean valid = true;
+    private String errorMessage;
+
     private ResponseList() {}
 
     public static ResponseList fromBytes(byte[] response) throws IOException {
@@ -29,20 +33,28 @@ public class ResponseList {
             instance.fileViews = new FileView[instance.directorySize];
             for (int i = 0; i < instance.directorySize; i++) {
                 int stringSize = stream.readInt();
-
-                String filename = new String(stream.readNBytes(stringSize), StandardCharsets.UTF_8);
+                String filename = new String(stream.readNBytes(stringSize));
                 boolean isDirectory = stream.readNBytes(1)[0] == 1;
                 instance.fileViews[i] = new FileView(filename, isDirectory);
             }
             return instance;
         } catch (IOException | IllegalArgumentException e) {
-            var exception = new IOException("Message format corrupted");
-            exception.addSuppressed(e);
-            throw exception;
+            return errorResponse("Message corrupted");
         }
+    }
+
+    private static ResponseList errorResponse(String errorMessage) {
+        var instance = new ResponseList();
+        instance.valid = false;
+        instance.errorMessage = errorMessage;
+        return instance;
     }
 
     public List<FileView> toFileViews() {
         return Arrays.asList(fileViews);
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 }
