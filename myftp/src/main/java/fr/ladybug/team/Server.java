@@ -2,6 +2,7 @@ package fr.ladybug.team;
 
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -107,23 +108,29 @@ public class Server {
         } catch (IOException e) {
             System.err.println("IOException reading from channel.");
         }
+        buffer.flip();
         int num = buffer.getInt();
-        String query = "";
+        StringBuilder query = new StringBuilder();
         try {
-            query = new String(buffer.array(), "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
+            char next = buffer.getChar();
+            while (next != '\0') {
+                query.append(next);
+                next = buffer.getChar();
+            };
+        } catch (BufferUnderflowException ignored) {
         }
+        System.out.println("Received query number is " + num);
         System.out.println("Received query is " + query);
         try {
-            if (num == 1) {
+            if (num == 2) {
                 executeGet(channel, query.substring(1));
-            } else if (num == 2) {
+            } else if (num == 1) {
                 executeList(channel, query.substring(1));
             } else {
-                // wrong query
+                System.err.println("Wrong query id");
             }
         } catch (IOException e) {
-            // exception
+            System.err.println("IOException while reading query.");
         }
     }
 
@@ -131,11 +138,13 @@ public class Server {
         ByteBuffer buf = ByteBuffer.allocate(1024);
         var file = new File(path);
         if (!file.isFile()) {
+            System.out.println("Nonexistent file.");
             buf.putInt(-1);
             output.write(buf);
             return;
         }
 
+        System.out.println("File length: " + file.length());
         buf.putLong(file.length());
         output.write(buf);
         try (var input = new DataInputStream(new FileInputStream(file))) {
@@ -147,7 +156,7 @@ public class Server {
     }
 
     private void executeList(SocketChannel output, String path) throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(1024);
+        ByteBuffer buf = ByteBuffer.allocate(4);
         var file = new File(path);
         if (!file.exists()) {
 //            output.writeInt(-1);

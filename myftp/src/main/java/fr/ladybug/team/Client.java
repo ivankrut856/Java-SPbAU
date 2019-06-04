@@ -104,13 +104,10 @@ public class Client {
                 var iterator = keys.iterator();
                 while (iterator.hasNext()) {
                     var key = iterator.next();
-
-
                     iterator.remove();
                 }
             }
         } catch (IOException ignore) {
-
         }
     }*/
 
@@ -129,10 +126,28 @@ public class Client {
 
                     if (key.isConnectable()) {
                         var channel = (SocketChannel) key.channel();
-                        channel.finishConnect()
+                        channel.finishConnect();
                         System.out.println("Ok!");
                         senderInit();
                     }
+
+                    if (key.isReadable()) {
+                        System.out.println("SMTH");
+                        var sc = (SocketChannel) key.channel();
+                        var buffer = ByteBuffer.allocate(1024);
+                        sc.read(buffer);
+                        String result = new String(buffer.array()).trim();
+                        System.out.println(result);
+                        if (result.length() <= 0) {
+                            sc.close();
+                            System.out.println("Connection closed...");
+                            System.out.println(
+                                    "Server will keep running. " +
+                                            "Try running another client to " +
+                                            "re-establish connection");
+                        }
+                    }
+
 
                     iterator.remove();
                 }
@@ -176,7 +191,7 @@ public class Client {
     }
 
     private static InetSocketAddress askAddress() throws UnknownHostException {
-        return new InetSocketAddress(InetAddress.getByName("172.20.52.213"), 8179);
+        return new InetSocketAddress(InetAddress.getByName("localhost"), 8179);
     }
 
     private static void printHelpMessage() {
@@ -204,7 +219,7 @@ public class Client {
             var stream = new DataOutputStream(bytes);
             stream.writeInt(taskName);
             for (var arg : args) {
-                stream.writeBytes(arg);
+                stream.writeChars(arg);
             }
             return bytes.toByteArray();
         }
