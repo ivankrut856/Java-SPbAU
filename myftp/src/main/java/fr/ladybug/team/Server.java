@@ -320,15 +320,7 @@ public class Server {
         }
 
         private void addFailedQuery() {
-            checkState(outputTransmission == null); // transmissions should come by one as clients are blocking
-            try {
-                channel.register(writeSelector, SelectionKey.OP_WRITE, this);
-                writeSelector.wakeup();
-            } catch (ClosedChannelException e) {
-                System.out.println("The client has disconnected");
-                return;
-            }
-            outputTransmission = new OutputTransmission(ByteBuffer.wrap(Ints.toByteArray(-1)));
+            addOutputQuery(Ints.toByteArray(-1));
         }
 
         private class InputTransmission {
@@ -360,7 +352,7 @@ public class Server {
             }
 
             private void readData() {
-                Objects.requireNonNull(receivedData);
+                Objects.requireNonNull(receivedData); //TODO checkState??
                 try {
                     channel.read(new ByteBuffer[]{queryTypeBuffer, receivedData});
                 } catch (IOException e) {
