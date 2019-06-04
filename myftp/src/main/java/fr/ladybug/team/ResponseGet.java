@@ -41,4 +41,8 @@ public class ResponseGet {
     public boolean isValid() {
         return valid;
     }
+
+    public String getError() {
+        return errorMessage;
+    }
 }

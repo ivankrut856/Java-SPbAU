@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.Socket;
@@ -11,6 +12,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.util.List;
 import java.util.Stack;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Client {
@@ -19,6 +21,8 @@ public class Client {
     private OutputStream outputStream;
 
     private Stack<String> fileTree;
+
+    private @NotNull static final Logger logger = Logger.getAnonymousLogger();
 
     public Client(String remoteAddress) throws IOException {
         server = new Socket(remoteAddress, 8179);
@@ -38,6 +42,9 @@ public class Client {
             protected Void call() throws Exception {
                 System.out.println("call");
                 var response = ResponseList.fromBytes(client.makeQuery(new Query(1, getFullPath())));
+                if (!response.isValid()) {
+                    System.err.println(response.getError());
+                }
                 Platform.runLater(() -> {
                     dataSupplier.clear();
                     dataSupplier.add(FileView.PARENT);
@@ -61,7 +68,9 @@ public class Client {
         fileTree.pop();
     }
 
-    public byte[] makeQuery(Query query) throws IOException {
+    private byte[] makeQuery(Query query) throws IOException {
+        logger.info("Message of the query executed: " + query.getMessage());
+        logger.info("Task of the query executed: " + query.getTaskName());
         query.goTo(outputStream);
         return readNextPackage(inputStream);
     }
@@ -86,6 +95,9 @@ public class Client {
     public void saveFile(String filename) {
         try {
             var response = ResponseGet.fromBytes(makeQuery(new Query(2, getFullPath() + FileSystems.getDefault().getSeparator() + filename)));
+            if (!response.isValid()) {
+                System.err.println(response.getError());
+            }
             System.out.println(new String(response.getFileContent()));
         } catch (IOException e) {
             throw new RuntimeException("", e);

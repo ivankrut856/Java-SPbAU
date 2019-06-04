@@ -21,6 +21,7 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 
 public class ClientInterface extends Application {
@@ -29,6 +30,8 @@ public class ClientInterface extends Application {
     private static Socket server;
     private static OutputStream outputStream;
     private static InputStream inputStream;
+
+    private @NotNull static final Logger logger = Logger.getAnonymousLogger();
 
     private static int getIdByName(String name) {
         switch (name) {
@@ -45,6 +48,7 @@ public class ClientInterface extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        logger.info("starting");
         TextInputDialog remoteAddressSupplier = new TextInputDialog();
         remoteAddressSupplier.setTitle("MyFTP");
         remoteAddressSupplier.setHeaderText("Welcome to MyFTP");
@@ -69,27 +73,27 @@ public class ClientInterface extends Application {
         final Client client = tmpClient;
         dataSupplier = FXCollections.observableArrayList();
         client.load(dataSupplier);
-        var listView = new ListView<FileView>(dataSupplier);
-        listView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                if (event.getClickCount() >= 2) {
-                    int selectedIndex = listView.getSelectionModel().getSelectedIndex();
-                    var currentView = listView.getItems().get(selectedIndex);
-                    if (currentView.isDirectory()) {
-                        if (currentView == FileView.PARENT)
-                            client.popDir();
-                        else {
-                            client.pushDir(currentView.getFilename());
-                        }
-                        client.load(dataSupplier);
-                    }
+
+        logger.info("initial load");
+
+        var listView = new ListView<>(dataSupplier);
+        listView.setOnMouseClicked(event -> {
+            if (event.getClickCount() >= 2) {
+                int selectedIndex = listView.getSelectionModel().getSelectedIndex();
+                var currentView = listView.getItems().get(selectedIndex);
+                if (currentView.isDirectory()) {
+                    if (currentView == FileView.PARENT)
+                        client.popDir();
                     else {
-                        if (currentView == FileView.LOADING)
-                            return;
-                        System.out.println("Wanna save");
-                        client.saveFile(currentView.getFilename());
+                        client.pushDir(currentView.getFilename());
                     }
+                    client.load(dataSupplier);
+                }
+                else {
+                    if (currentView == FileView.LOADING)
+                        return;
+
+                    client.saveFile(currentView.getFilename());
                 }
             }
         });
