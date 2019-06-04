@@ -189,6 +189,19 @@ public class Server {
     private void processWrite(SelectionKey key) {
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.OutputTransmission currentStatus = transmissionController.outputTransmission;
+
+        if (currentStatus == null) {
+            return;
+        }
+
+        var channel = (SocketChannel)key.channel();
+        if (!currentStatus.hasSentData()) {
+            key.cancel();
+            transmissionController.outputTransmission = null;
+        }
+        else {
+            currentStatus.write(channel);
+        }
     }
 
     private void processRead(SelectionKey key) {
