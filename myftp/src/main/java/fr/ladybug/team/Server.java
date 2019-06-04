@@ -5,7 +5,6 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -13,7 +12,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -91,11 +89,11 @@ public class Server {
                 if (key.isAcceptable()) {
                     SocketChannel sc = socketChannel.accept();
                     sc.configureBlocking(false);
-                    sc.register(selector, SelectionKey.OP_READ, new Transmission());
+                    sc.register(selector, SelectionKey.OP_READ, new InputTransmission());
                     sc.write(ByteBuffer.wrap("Connected".getBytes()));
                     System.out.println("Connection Accepted: " + sc.getLocalAddress() + "\n");
                 } else if (key.isReadable()) {
-                    processConnection(key);
+                    processRead(key);
                 } else {
                     System.err.println("Error: key not supported by server.");
                 }
@@ -103,38 +101,20 @@ public class Server {
         }
     }
 
-    private void processConnection(SelectionKey key) {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
+    private void processRead(SelectionKey key) {
+        InputTransmission currentStatus = (InputTransmission)key.attachment();
         SocketChannel channel = (SocketChannel)key.channel();
-        int bytesRead = -1;
-        try {
-            bytesRead = channel.read(buffer);
-        } catch (IOException e) {
-            System.err.println("IOException reading from channel.");
+        if (!currentStatus.hasReadSize()) {
+            // read size of next package
+            currentStatus.readSize(channel);
+        } else {
+            // read the package data
+            //TODO checkArgument packageSize >= 0
+            currentStatus.readData(channel);
         }
-        buffer.flip();
-        int num = buffer.getInt();
-        StringBuilder query = new StringBuilder();
-        try {
-            char next = buffer.getChar();
-            while (next != '\0') {
-                query.append(next);
-                next = buffer.getChar();
-            };
-        } catch (BufferUnderflowException ignored) {
-        }
-        System.out.println("Received query number is " + num);
-        System.out.println("Received query is " + query);
-        try {
-            if (num == 2) {
-                executeGet(channel, query.substring(1));
-            } else if (num == 1) {
-                executeList(channel, query.substring(1));
-            } else {
-                System.err.println("Wrong query id");
-            }
-        } catch (IOException e) {
-            System.err.println("IOException while reading query.");
+        // read happened, check if it ended OK
+        if (currentStatus.hasReadData()) {
+            // execute something??
         }
     }
 
@@ -176,10 +156,8 @@ public class Server {
      * @param channel the channel to write to.
      */
     private void writeFailure(SocketChannel channel) throws IOException {
-        var buffer = ByteBuffer.wrap(Ints.toByteArray(-1));
-        while (buffer.hasRemaining()) {
-            channel.write(buffer);
-        }
+        var output = new OutputTransmission(ByteBuffer.wrap(Ints.toByteArray(-1)));
+        //TODO register with selector
     }
 
     /**
@@ -189,10 +167,8 @@ public class Server {
      * @param result the result of the operation that should be sent through the channel.
      */
     private void writeSuccess(SocketChannel channel, byte[] result) throws IOException {
-        var buffer = ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(result.length), result));
-        while (buffer.hasRemaining()) {
-            channel.write(buffer);
-        }
+        var output = new OutputTransmission(ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(result.length), result)));
+        //TODO register with selector
     }
 
     /**
@@ -207,9 +183,58 @@ public class Server {
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(fileName.length()), fileName.getBytes()), isDirectory);
     }
 
-    private class Transmission {
+    private class InputTransmission {
+        private final int defaultPackageSize = -5;
         private ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
-        private ByteBuffer received;
+        private ByteBuffer receivedData;
         private int packageSize;
+
+        private boolean hasReadSize() {
+            return packageSize != defaultPackageSize;
+        }
+
+        private boolean hasReadData() {
+            return receivedData.hasRemaining();
+        }
+
+        private void readSize(SocketChannel channel) {
+            try {
+                channel.read(packageSizeBuffer);
+            } catch (IOException e) {
+                System.err.println("Failed read from channel: " + e.getMessage());
+            }
+            if (!packageSizeBuffer.hasRemaining()) {
+                packageSizeBuffer.flip();
+                packageSize = packageSizeBuffer.getInt();
+                if (packageSize >= 0) {
+                    receivedData = ByteBuffer.allocate(packageSize);
+                }
+            }
+        }
+
+        private void readData(SocketChannel channel) {
+            try {
+                channel.read(receivedData);
+            } catch (IOException e) {
+                System.err.println("Failed read from channel: " + e.getMessage());
+            }
+        }
+
+        private void reset() {
+            packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
+            packageSize = defaultPackageSize;
+        }
+    }
+
+    private class OutputTransmission {
+        private ByteBuffer sentData;
+
+        private OutputTransmission(ByteBuffer sentData) {
+            this.sentData = sentData;
+        }
+
+        private boolean hasSentData() {
+            return false;
+        }
     }
 }
