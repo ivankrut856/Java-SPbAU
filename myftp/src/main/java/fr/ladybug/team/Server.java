@@ -353,14 +353,12 @@ public class Server {
             }
 
             private void readCorrectly(ByteBuffer[] byteBuffers) {
-                long result = 0;
                 try {
-                    result = channel.read(byteBuffers);
+                    if (channel.read(byteBuffers) == -1) {
+                        channel.close();
+                    }
                 } catch (IOException e) {
                     System.err.println("Failed read from channel: " + e.getMessage());
-                }
-                if (result == -1) {
-                    //do stuff
                 }
             }
 
