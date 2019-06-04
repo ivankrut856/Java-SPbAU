@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class Server {
     private ServerSocketChannel serverSocket;
 
@@ -261,16 +263,18 @@ public class Server {
         }
 
         var fileList = path.toFile().listFiles();
-        assert fileList != null; //TODO no.
-        int size = fileList.length;
-        System.out.println("Found " + size + " files.");
-        byte[] result = Ints.toByteArray(size);
-
-        //format of File encoding: the name length, then the name itself, then the boolean isDir.
-        for (var file : fileList) {
-            result = ArrayUtils.addAll(result, fileToBytes(file));
+        if (fileList == null) {
+            System.err.println("Could not get list of files in directory.");
+            controller.addFailedQuery();
+        } else {
+            int size = fileList.length;
+            System.out.println("Found " + size + " files.");
+            byte[] result = Ints.toByteArray(size);
+            for (var file : fileList) {
+                result = ArrayUtils.addAll(result, fileToBytes(file));
+            }
+            controller.addOutputQuery(result);
         }
-        controller.addOutputQuery(result);
     }
 
     private byte[] fileToBytes(File file) {
@@ -290,6 +294,7 @@ public class Server {
         }
 
         private void addOutputQuery(byte[] data) {
+            checkState(outputTransmission == null); // transmissions should come by one as clients are blocking
             try {
                 channel.register(writeSelector, SelectionKey.OP_WRITE, this);
             } catch (ClosedChannelException e) {
@@ -300,6 +305,7 @@ public class Server {
         }
 
         private void addFailedQuery() {
+            checkState(outputTransmission == null); // transmissions should come by one as clients are blocking
             try {
                 channel.register(writeSelector, SelectionKey.OP_WRITE, this);
             } catch (ClosedChannelException e) {
