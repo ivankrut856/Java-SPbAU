@@ -16,7 +16,13 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class Server {
-    private Selector selector;
+    private ServerSocketChannel serverSocket;
+
+    private Selector acceptSelector;
+
+    private Selector readSelector;
+    private Selector writeSelector;
+
     private InetSocketAddress listenAddress;
 
     public static void main(String[] args) {
@@ -33,16 +39,44 @@ public class Server {
             System.out.println("Port number should be a number.");
             return;
         }
-        var server = new Thread(() -> {
+        Server server = null;
+        try {
+            server = new Server(address, portNumber);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        Server finalServer = server;
+        var acceptThread = new Thread(() -> {
             try {
-                new Server().startServer(address, portNumber);
+                finalServer.accept();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
-        server.setDaemon(false);
-        server.start();
-
+        var readThread = new Thread(() -> {
+            try {
+                finalServer.read();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        var writeThread = new Thread(() -> {
+            try {
+                finalServer.write();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        acceptThread.setDaemon(true);
+        readThread.setDaemon(true);
+        writeThread.setDaemon(true);
+        acceptThread.start();
+        readThread.start();
+        writeThread.start();
 
         try (var input = new BufferedReader(new InputStreamReader(System.in));
              var output = new PrintWriter(System.out, true)) {
@@ -56,49 +90,50 @@ public class Server {
         } catch (IOException e) {
             System.err.println("IOException while reading.");
         }
-
-        while (server.isAlive()) {
-            server.interrupt();
-        }
     }
 
-    public void startServer(String address, int portNumber) throws IOException {
-        this.selector = Selector.open();
-        ServerSocketChannel socketChannel = ServerSocketChannel.open();
-        socketChannel.configureBlocking(false);
+    public Server(String address, int portNumber) throws IOException {
+        this.acceptSelector = Selector.open();
+        serverSocket = ServerSocketChannel.open();
+        serverSocket.configureBlocking(false);
 
         listenAddress = new InetSocketAddress(address, portNumber);
-        socketChannel.socket().bind(listenAddress);
-        socketChannel.register(this.selector, SelectionKey.OP_ACCEPT);
+        serverSocket.socket().bind(listenAddress);
+        serverSocket.register(this.acceptSelector, SelectionKey.OP_ACCEPT);
         System.out.println("Server started on port " + portNumber + ".");
+    }
 
+    public void accept() throws IOException {
         while (!Thread.currentThread().isInterrupted()) {
-            int readyCount = selector.select();
+            int readyCount = acceptSelector.select();
             if (readyCount == 0) {
                 continue;
             }
 
-            Set<SelectionKey> readyKeys = selector.selectedKeys();
+            Set<SelectionKey> readyKeys = acceptSelector.selectedKeys();
             Iterator iterator = readyKeys.iterator();
             while (iterator.hasNext()) {
                 SelectionKey key = (SelectionKey) iterator.next();
 
-                // Remove key from set so we don't process it twice
-                iterator.remove();
-
                 if (key.isAcceptable()) {
-                    SocketChannel sc = socketChannel.accept();
+                    SocketChannel sc = serverSocket.accept();
                     sc.configureBlocking(false);
-                    sc.register(selector, SelectionKey.OP_READ, new InputTransmission());
-                    sc.write(ByteBuffer.wrap("Connected".getBytes()));
+                    sc.register(readSelector, SelectionKey.OP_READ, new InputTransmission());
                     System.out.println("Connection Accepted: " + sc.getLocalAddress() + "\n");
-                } else if (key.isReadable()) {
-                    processRead(key);
                 } else {
                     System.err.println("Error: key not supported by server.");
                 }
+                iterator.remove();
             }
         }
+    }
+
+    public void read() throws IOException {
+
+    }
+
+    public void write() throws IOException {
+
     }
 
     private void processRead(SelectionKey key) {
