@@ -15,8 +15,11 @@ repositories {
 dependencies {
     testCompile('org.junit.jupiter:junit-jupiter-api:5.3.2')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.2')
-    // https://mvnrepository.com/artifact/org.jetbrains/annotations
-    compile group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
+    compile('org.jetbrains:annotations:16.0.2')
+    compile('org.apache.commons:commons-lang3:3.0')
+    compile('com.google.guava:guava:27.1-jre')
+
+
 }
 test {
     useJUnitPlatform()

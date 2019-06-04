@@ -1,5 +1,8 @@
 package fr.ladybug.team;
 
+import com.google.common.primitives.Ints;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.BufferUnderflowException;
@@ -8,6 +11,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
@@ -134,48 +139,6 @@ public class Server {
         }
     }
 
-    private void executeGet(SocketChannel output, String path) throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(1024);
-        var file = new File(path);
-        if (!file.isFile()) {
-            System.out.println("Nonexistent file.");
-            buf.putInt(-1);
-            output.write(buf);
-            return;
-        }
-
-        System.out.println("File length: " + file.length());
-        buf.putLong(file.length());
-        output.write(buf);
-        try (var input = new DataInputStream(new FileInputStream(file))) {
-            byte[] buffer = new byte[1024];
-            for (int read = input.read(buffer); read != -1; read = input.read(buffer)) {
-                output.write(ByteBuffer.wrap(buffer));
-            }
-        }
-    }
-
-    private void executeList(SocketChannel output, String path) throws IOException {
-        ByteBuffer buf = ByteBuffer.allocate(4);
-        var file = new File(path);
-        if (!file.exists()) {
-//            output.writeInt(-1);
-            buf.putInt(-1);
-            output.write(buf);
-            return;
-        }
-
-        ArrayList<String> result = new ArrayList<>();
-        int size = getDirectoryTree(file, result);
-//        output.writeInt(size);
-        buf.putInt(size);
-        output.write(buf);
-        for (var info : result) {
-//            output.writeUTF(info);
-            output.write(ByteBuffer.wrap(info.getBytes()));
-        }
-    }
-
     private int getDirectoryTree(File parent, ArrayList<String> result) {
         int size = 0;
         if (parent.isDirectory()) {
@@ -188,5 +151,75 @@ public class Server {
             }
         }
         return size;
+    }
+
+
+    private void executeGet(SocketChannel output, String pathName) throws IOException {
+        var path = Paths.get(pathName);
+        if (!Files.isRegularFile(path)) {
+            System.out.println("Nonexistent file.");
+            writeFailure(output);
+        }
+
+        byte[] fileBytes = Files.readAllBytes(path);
+        byte[] lengthBytes = Ints.toByteArray(fileBytes.length);
+        System.out.println("File size: " + fileBytes.length);
+        writeSuccess(output, ArrayUtils.addAll(lengthBytes, fileBytes));
+    }
+
+    private void executeList(SocketChannel output, String pathName) throws IOException {
+        var path = Paths.get(pathName);
+        if (!Files.exists(path)) {
+            System.out.println("Nonexistent file");
+            writeFailure(output);
+        }
+
+        var fileList = path.toFile().listFiles();
+        assert fileList != null; //TODO no.
+        int size = fileList.length;
+        System.out.println("Found " + size + " files.");
+        byte[] result = Ints.toByteArray(size);
+
+        //format of File encoding: the name length, then the name itself, then the boolean isDir.
+        for (var file : fileList) {
+            result = ArrayUtils.addAll(result, fileToBytes(file));
+        }
+        writeSuccess(output, result);
+    }
+
+    /**
+     * Outputs the result of a failed operation to the given channel: -1 byte of information.
+     * @param channel the channel to write to.
+     */
+    private void writeFailure(SocketChannel channel) throws IOException {
+//        Saved this as an example of normal-person buffer usage. Hopefully will never need it.
+//        ByteBuffer buf = ByteBuffer.allocate(Integer.BYTES);
+//        buf.putInt(-1);
+//        buf.flip();
+//        channel.write(buf);
+        channel.write(ByteBuffer.wrap(Ints.toByteArray(-1)));
+    }
+
+    /**
+     * Outputs the result of a successful operation to the given channel.
+     * First it outputs the length of the remaining data, as an integer, then the data as a byte array.
+     * @param channel the channel to write to.
+     * @param result the result of the operation that should be sent through the channel.
+     */
+    private void writeSuccess(SocketChannel channel, byte[] result) throws IOException {
+        channel.write(ByteBuffer.wrap(Ints.toByteArray(result.length)));
+        channel.write(ByteBuffer.wrap(result));
+    }
+
+    /**
+     * Gets the necessary info about the given file and converts it to a byte array.
+     * Format: an integer (the file name length), a string (the file name) and a boolean (is the file a directory), concatenated.
+     * @param file the file to get information about.
+     * @return the resulting byte array.
+     */
+    private byte[] fileToBytes(File file) {
+        String fileName = file.getName();
+        byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
+        return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(fileName.length()), fileName.getBytes()), isDirectory);
     }
 }
