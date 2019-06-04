@@ -10,6 +10,7 @@ import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
@@ -297,6 +298,10 @@ public class Server {
         String fileName = file.getName();
         byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
         byte[] encodedFile = StandardCharsets.UTF_8.encode(fileName).array();
+        System.out.println(fileName);
+        System.out.println(encodedFile.length);
+        System.out.println(Arrays.toString(encodedFile));
+
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(encodedFile.length), encodedFile), isDirectory);
     }
 

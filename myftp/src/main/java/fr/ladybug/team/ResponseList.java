@@ -11,6 +11,7 @@ public class ResponseList {
 
     private int directorySize;
     String[] filenames;
+    boolean[] isDirectory;
 
     private ResponseList() {}
 
@@ -21,9 +22,11 @@ public class ResponseList {
             instance.directorySize = stream.readInt();
             checkArgument(instance.directorySize >= 0);
             instance.filenames = new String[instance.directorySize];
+            instance.isDirectory = new boolean[instance.directorySize];
             for (int i = 0; i < instance.directorySize; i++) {
                 int stringSize = stream.readInt();
-                String s = new String(stream.readNBytes(stringSize), Charset.forName("UTF-8"));
+                String s = new String(stream.readNBytes(stringSize), Charset.forName("UTF-16"));
+                instance.isDirectory[i] = stream.readNBytes(1)[0] == 1;
                 instance.filenames[i] = s;
             }
             return instance;

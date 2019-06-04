@@ -51,8 +51,9 @@ public class ClientInterface {
                 case "list": {
                     try {
                         ResponseList responseList = ResponseList.fromBytes(response);
-                        for (var filename : responseList.filenames) {
-                            System.out.println(filename);
+                        for (int i = 0; i < responseList.filenames.length; i++) {
+                            var filename = responseList.filenames[i];
+                            System.out.println(filename + " " + responseList.isDirectory[i]);
                         }
                         System.out.println("got response");
                     } catch (IOException e) {

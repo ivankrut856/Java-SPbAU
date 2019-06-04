@@ -24,7 +24,7 @@ public class Query {
         int packageSize = 0;
 
         packageSize += Integer.BYTES;
-        var bytes = message.getBytes(StandardCharsets.UTF_8);
+        var bytes = message.getBytes(StandardCharsets.UTF_16);
         packageSize += bytes.length;
 
         var stream = new DataOutputStream(outputStream);
