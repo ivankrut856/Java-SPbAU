@@ -139,21 +139,6 @@ public class Server {
         }
     }
 
-    private int getDirectoryTree(File parent, ArrayList<String> result) {
-        int size = 0;
-        if (parent.isDirectory()) {
-            File[] children = parent.listFiles();
-            if (children != null) {
-                for (var child : children) {
-                    result.add(child.getPath() + " " + child.isDirectory());
-                    size++;
-                }
-            }
-        }
-        return size;
-    }
-
-
     private void executeGet(SocketChannel output, String pathName) throws IOException {
         var path = Paths.get(pathName);
         if (!Files.isRegularFile(path)) {
@@ -192,12 +177,10 @@ public class Server {
      * @param channel the channel to write to.
      */
     private void writeFailure(SocketChannel channel) throws IOException {
-//        Saved this as an example of normal-person buffer usage. Hopefully will never need it.
-//        ByteBuffer buf = ByteBuffer.allocate(Integer.BYTES);
-//        buf.putInt(-1);
-//        buf.flip();
-//        channel.write(buf);
-        channel.write(ByteBuffer.wrap(Ints.toByteArray(-1)));
+        var buffer = ByteBuffer.wrap(Ints.toByteArray(-1));
+        while (buffer.hasRemaining()) {
+            channel.write(buffer);
+        }
     }
 
     /**
@@ -207,8 +190,10 @@ public class Server {
      * @param result the result of the operation that should be sent through the channel.
      */
     private void writeSuccess(SocketChannel channel, byte[] result) throws IOException {
-        channel.write(ByteBuffer.wrap(Ints.toByteArray(result.length)));
-        channel.write(ByteBuffer.wrap(result));
+        var buffer = ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(result.length), result));
+        while (buffer.hasRemaining()) {
+            channel.write(buffer);
+        }
     }
 
     /**
