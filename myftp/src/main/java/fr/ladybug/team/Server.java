@@ -144,14 +144,11 @@ public class Server {
 
     public void read() throws IOException {
         while (!Thread.currentThread().isInterrupted()) {
-            System.out.println("kek");
             readSelector.selectedKeys().clear();
             int readyCount = readSelector.select();
-            System.out.println("wanna read");
             if (readyCount == 0) {
                 continue;
             }
-            System.out.println("select rabotaet");
 
             Set<SelectionKey> readyKeys = readSelector.selectedKeys();
             Iterator iterator = readyKeys.iterator();
@@ -169,7 +166,31 @@ public class Server {
     }
 
     public void write() throws IOException {
+        while (!Thread.currentThread().isInterrupted()) {
+            writeSelector.selectedKeys().clear();
+            int readyCount = writeSelector.select();
+            if (readyCount == 0) {
+                continue;
+            }
 
+            Set<SelectionKey> readyKeys = writeSelector.selectedKeys();
+            Iterator iterator = readyKeys.iterator();
+            while (iterator.hasNext()) {
+                SelectionKey key = (SelectionKey) iterator.next();
+
+                if (key.isWritable()) {
+                    processWrite(key);
+                } else {
+                    System.err.println("Error: key not supported by server.");
+                }
+                iterator.remove();
+            }
+        }
+    }
+
+    private void processWrite(SelectionKey key) {
+        TransmissionController transmissionController = (TransmissionController) key.attachment();
+        TransmissionController.OutputTransmission currentStatus = transmissionController.outputTransmission;
     }
 
     private void processRead(SelectionKey key) {
