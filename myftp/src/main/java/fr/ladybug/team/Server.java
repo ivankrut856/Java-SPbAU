@@ -219,7 +219,7 @@ public class Server {
             // execute something
             currentStatus.finalizeRead();
             int queryType = currentStatus.queryTypeBuffer.getInt();
-            String query = new String(currentStatus.receivedData.array(), StandardCharsets.UTF_8);
+            String query = new String(currentStatus.receivedData.array(), StandardCharsets.UTF_16);
             if (queryType == 1) {
                 threadPool.submit(() -> executeGet(transmissionController, query));
             } else if (queryType == 2) {
@@ -294,7 +294,7 @@ public class Server {
     private byte[] fileToBytes(File file) {
         String fileName = file.getName();
         byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
-        byte[] encodedFile = StandardCharsets.UTF_8.encode(fileName).array();
+        byte[] encodedFile = StandardCharsets.UTF_16.encode(fileName).array();
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(encodedFile.length), encodedFile), isDirectory);
     }
 
