@@ -15,8 +15,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class Server {
@@ -28,7 +30,7 @@ public class Server {
     private Selector writeSelector;
 
     private InetSocketAddress listenAddress;
-    private ExecutorService threadPool;
+    private ExecutorService threadPool = Executors.newFixedThreadPool(5);
 
     public static void main(String[] args) {
         if (args.length != 2) {
@@ -266,14 +268,14 @@ public class Server {
             private ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
             private ByteBuffer queryTypeBuffer = ByteBuffer.allocate(Integer.BYTES);
             private ByteBuffer receivedData;
-            private int packageSize;
+            private int packageSize = defaultPackageSize;
 
             private boolean hasReadSize() {
                 return packageSize != defaultPackageSize;
             }
 
             private boolean hasReadData() {
-                return receivedData.hasRemaining();
+                return !receivedData.hasRemaining();
             }
 
             private void readSize(SocketChannel channel) {
@@ -290,6 +292,7 @@ public class Server {
             }
 
             private void readData(SocketChannel channel) {
+                Objects.requireNonNull(receivedData);
                 try {
                     channel.read(new ByteBuffer[]{queryTypeBuffer, receivedData});
                 } catch (IOException e) {
