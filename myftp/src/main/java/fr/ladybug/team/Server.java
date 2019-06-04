@@ -10,7 +10,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -19,7 +18,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 public class Server {
     private ServerSocketChannel serverSocket;
@@ -176,17 +174,22 @@ public class Server {
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.InputTransmission currentStatus = transmissionController.inputTransmission;
         SocketChannel channel = (SocketChannel)key.channel();
-        System.out.println("zashel");
+        System.out.println("Started processing read.");
         if (!currentStatus.hasReadSize()) {
             // read size of next package
             currentStatus.readSize(channel);
         } else {
             // read the package data
-            //TODO checkArgument packageSize >= 0
-            currentStatus.readData(channel);
+            if (currentStatus.packageSize <= Integer.BYTES) {
+                System.err.println("Invalid package size: " + currentStatus.packageSize);
+                transmissionController.addFailedQuery();
+                currentStatus.reset();
+            } else {
+                currentStatus.readData(channel);
+            }
         }
 
-        System.out.println("eshe odin");
+        System.out.println("Read smth from current channel.");
         // read happened, check if it ended OK
         if (currentStatus.hasReadData()) {
             // execute something
@@ -199,8 +202,9 @@ public class Server {
                 threadPool.submit(() -> executeList(transmissionController, query));
             } else {
                 System.err.println("Invalid query type: " + queryType);
+                transmissionController.addFailedQuery();
             }
-            System.out.println("submitted");
+            System.out.println("Submitted a query.");
             currentStatus.reset();
         }
     }
@@ -209,7 +213,7 @@ public class Server {
         var path = Paths.get(pathName);
         if (!Files.isRegularFile(path)) {
             System.out.println("Nonexistent file.");
-            controller.addOutputQuery(Ints.toByteArray(-1));
+            controller.addFailedQuery();
         }
 
         byte[] fileBytes = new byte[0];
@@ -227,7 +231,7 @@ public class Server {
         var path = Paths.get(pathName);
         if (!Files.exists(path)) {
             System.out.println("Nonexistent file");
-            controller.addOutputQuery(Ints.toByteArray(-1));
+            controller.addFailedQuery();
         }
 
         var fileList = path.toFile().listFiles();
@@ -250,17 +254,21 @@ public class Server {
     }
 
     private class TransmissionController {
-        SocketChannel outputChannel;
+        SocketChannel channel;
         private InputTransmission inputTransmission;
         private OutputTransmission outputTransmission;
 
-        private TransmissionController(SocketChannel inputChannel) {
-            outputChannel = inputChannel; // it's a channel
+        private TransmissionController(SocketChannel channel) {
+            this.channel = channel; // it's a channel
             inputTransmission = new InputTransmission();
         }
 
         private void addOutputQuery(byte[] data) {
             outputTransmission = new OutputTransmission(ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(data.length), data)));
+        }
+
+        private void addFailedQuery() {
+            outputTransmission = new OutputTransmission(ByteBuffer.wrap(Ints.toByteArray(-1)));
         }
 
         private class InputTransmission {
@@ -275,7 +283,7 @@ public class Server {
             }
 
             private boolean hasReadData() {
-                return !receivedData.hasRemaining();
+                return receivedData != null && !receivedData.hasRemaining();
             }
 
             private void readSize(SocketChannel channel) {
