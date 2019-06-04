@@ -278,7 +278,7 @@ public class Server {
             System.out.println("Nonexistent file");
             controller.addFailedQuery();
         }
-
+11
         var fileList = path.toFile().listFiles();
         if (fileList == null) {
             System.err.println("Could not get list of files in directory.");
@@ -297,7 +297,7 @@ public class Server {
     private byte[] fileToBytes(File file) {
         String fileName = file.getName();
         byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
-        byte[] encodedFile = StandardCharsets.UTF_8.encode(fileName).array();
+        byte[] encodedFile = StandardCharsets.UTF_16.encode(fileName).array();
         System.out.println(fileName);
         System.out.println(encodedFile.length);
         System.out.println(Arrays.toString(encodedFile));
