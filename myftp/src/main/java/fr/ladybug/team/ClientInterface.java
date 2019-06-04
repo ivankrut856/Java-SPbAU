@@ -42,7 +42,7 @@ public class ClientInterface {
 
             byte[] response = new byte[0];
             try {
-                response = client.makeQuery(new Query(getIdByName(command[0]), Arrays.copyOfRange(command, 1, command.length)));
+                response = client.makeQuery(new Query(getIdByName(command[0]), command[1]));
             } catch (IOException e) {
                 e.printStackTrace();
             }

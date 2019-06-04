@@ -59,7 +59,7 @@ public class Server {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        })
+        });
         var readThread = new Thread(() -> {
             try {
                 finalServer.read();
@@ -98,13 +98,16 @@ public class Server {
     }
 
     public Server(String address, int portNumber) throws IOException {
-        this.acceptSelector = Selector.open();
+        acceptSelector = Selector.open();
+        readSelector = Selector.open();
+        writeSelector = Selector.open();
+
         serverSocket = ServerSocketChannel.open();
         serverSocket.configureBlocking(false);
 
         listenAddress = new InetSocketAddress(address, portNumber);
         serverSocket.socket().bind(listenAddress);
-        serverSocket.register(this.acceptSelector, SelectionKey.OP_ACCEPT);
+        serverSocket.register(acceptSelector, SelectionKey.OP_ACCEPT);
         System.out.println("Server started on port " + portNumber + ".");
     }
 
@@ -121,10 +124,10 @@ public class Server {
                 SelectionKey key = (SelectionKey) iterator.next();
 
                 if (key.isAcceptable()) {
+                    var serverSocket = ((ServerSocketChannel)key.channel());
                     SocketChannel sc = serverSocket.accept();
                     sc.configureBlocking(false);
-                    sc.register(acceptSelector, SelectionKey.OP_READ, new TransmissionController());
-//                    sc.write(ByteBuffer.wrap("Connected".getBytes()));
+                    sc.register(readSelector, SelectionKey.OP_READ, new TransmissionController(sc));
                     System.out.println("Connection Accepted: " + sc.getLocalAddress() + "\n");
                 } else {
                     System.err.println("Error: key not supported by server.");
@@ -135,7 +138,26 @@ public class Server {
     }
 
     public void read() throws IOException {
+        while (!Thread.currentThread().isInterrupted()) {
+            int readyCount = readSelector.select();
+            System.out.println("wanna read");
+            if (readyCount == 0) {
+                continue;
+            }
 
+            Set<SelectionKey> readyKeys = readSelector.selectedKeys();
+            Iterator iterator = readyKeys.iterator();
+            while (iterator.hasNext()) {
+                SelectionKey key = (SelectionKey) iterator.next();
+
+                if (key.isReadable()) {
+                    processRead(key);
+                } else {
+                    System.err.println("Error: key not supported by server.");
+                }
+                iterator.remove();
+            }
+        }
     }
 
     public void write() throws IOException {
@@ -222,6 +244,7 @@ public class Server {
 
         private TransmissionController(SocketChannel inputChannel) {
             outputChannel = inputChannel; // it's a channel
+            inputTransmission = new InputTransmission();
         }
 
         private void addOutputQuery(byte[] data) {
