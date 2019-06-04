@@ -3,6 +3,7 @@ package fr.ladybug.team;
 import com.google.common.primitives.Ints;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -97,7 +98,7 @@ public class Server {
         var listenAddress = new InetSocketAddress(address, portNumber);
         serverSocketChannel.socket().bind(listenAddress);
         serverSocketChannel.register(acceptSelector, SelectionKey.OP_ACCEPT);
-        System.out.println("Server started on port " + portNumber + ".");
+        logger.info("Server started on port " + portNumber + ".");
 
         acceptingThread = new Thread(() -> {
             try {
@@ -160,7 +161,7 @@ public class Server {
                     socketChannel.configureBlocking(false);
                     socketChannel.register(readSelector, SelectionKey.OP_READ, new TransmissionController(socketChannel));
                     readSelector.wakeup();
-                    System.out.println("Connection Accepted: " + socketChannel.getLocalAddress() + "\n");
+                    logger.info("Connection Accepted: " + socketChannel.getLocalAddress() + "\n");
                 } else {
                     logger.severe("Error: key not supported by server.");
                 }
@@ -209,7 +210,7 @@ public class Server {
                     TransmissionController controller = (TransmissionController)key.attachment();
                     controller.processWrite(key);
                 } else {
-                    System.out.println("Error: key not supported by server.");
+                    logger.severe("Error: key not supported by server.");
                 }
                 iterator.remove();
             }
@@ -222,20 +223,20 @@ public class Server {
      * @param pathName the path of the file for which the get query should be executed.
      */
     private void executeGet(@NotNull TransmissionController controller, @NotNull String pathName) {
-        System.out.println("Executing get for " + pathName);
+        logger.info("Executing get for " + pathName);
         var path = Paths.get(pathName);
         if (!Files.isRegularFile(path)) {
-            System.out.println("File does not exist.");
+            logger.info("File " + pathName + " does not exist.");
             controller.addQueryForIncorrectFile();
         }
         byte[] fileBytes = new byte[0];
         try {
             fileBytes = Files.readAllBytes(path);
         } catch (IOException e) {
-            System.out.println("Failed to read file " + pathName);
+            logger.severe("Failed to read file " + pathName);
         }
         byte[] lengthBytes = Ints.toByteArray(fileBytes.length);
-        System.out.println("File size: " + fileBytes.length);
+        logger.info("Successfully read file, size is " + fileBytes.length);
         controller.addOutputQuery(ArrayUtils.addAll(lengthBytes, fileBytes));
     }
 
@@ -245,19 +246,19 @@ public class Server {
      * @param pathName the path of the file for which the list query should be executed.
      */
     private void executeList(@NotNull TransmissionController controller, @NotNull String pathName) {
-        System.out.println("Executing list for " + pathName);
+        logger.info("Executing list for " + pathName);
         var path = Paths.get(pathName);
         if (!Files.isDirectory(path)) {
-            System.out.println("File does not exist or is not a directory.");
+            logger.info("File " + pathName + " does not exist or is not a directory.");
             controller.addQueryForIncorrectFile();
         }
         var fileList = path.toFile().listFiles();
         if (fileList == null) {
-            System.out.println("Could not get list of files in directory.");
+            logger.severe("Could not get list of files in directory.");
             controller.addFailedQuery();
         } else {
             int size = fileList.length;
-            System.out.println("Found " + size + " files.");
+            logger.info("Successfully listed files in directory, found " + size + " files.");
             byte[] result = Ints.toByteArray(size);
             for (var file : fileList) {
                 result = ArrayUtils.addAll(result, fileToBytes(file));
@@ -300,7 +301,7 @@ public class Server {
                 channel.register(writeSelector, SelectionKey.OP_WRITE, this);
                 writeSelector.wakeup();
             } catch (ClosedChannelException e) {
-                System.out.println("The client has disconnected");
+                logger.info("The client has disconnected.");
                 return;
             }
             outputTransmission.sendData(ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(data.length), data)));
@@ -318,12 +319,11 @@ public class Server {
 
         /** Method that should be called when the channel is ready to be read from. */
         private void processRead() {
-            System.out.println("Started processing read.");
             if (!inputTransmission.hasReadSize()) { // read size of next package
                 inputTransmission.readSize();
             } else { // read the package data
                 if (inputTransmission.packageSize <= Integer.BYTES) { // all packages have at least an int
-                    System.out.println("Invalid package size: " + inputTransmission.packageSize);
+                    logger.severe("Invalid package size: " + inputTransmission.packageSize);
                     addFailedQuery();
                     inputTransmission.reset();
                 } else {
@@ -331,7 +331,6 @@ public class Server {
                 }
             }
 
-            System.out.println("Read from current channel.");
             if (inputTransmission.hasReadData()) {
                 inputTransmission.finalizeRead();
                 int queryType = inputTransmission.queryTypeBuffer.getInt();
@@ -341,22 +340,21 @@ public class Server {
                 } else if (queryType == 1) {
                     threadPool.submit(() -> executeList(this, query));
                 } else {
-                    System.out.println("Invalid query type: " + queryType);
+                    logger.severe("Invalid query type: " + queryType);
                     this.addFailedQuery();
                 }
-                System.out.println("Submitted a query.");
+                logger.info("Submitted a query for " + query);
                 inputTransmission.reset();
             }
         }
 
         /** Method that should be called when the channel is ready to be written to. */
         private void processWrite(@NotNull SelectionKey key) {
-            System.out.println("Processing...");
-            if (outputTransmission.hasSentData()) {
-                System.out.println("to cancel");
+            if (outputTransmission.packageToSend != null && outputTransmission.hasSentData()) {
+                logger.info("Sent response.");
                 key.cancel();
-            } else {
-                System.out.println("writing..");
+                outputTransmission.finalizeWrite();
+            } else if (outputTransmission.packageToSend != null) {
                 outputTransmission.writeData();
             }
         }
@@ -396,7 +394,7 @@ public class Server {
                         channel.close(); //closes channel elegantly if disconnect happened.
                     }
                 } catch (IOException e) {
-                    System.out.println("Failed read from channel: " + e.getMessage());
+                    logger.severe("Failed read from channel: " + e.getMessage());
                 }
             }
 
@@ -414,23 +412,28 @@ public class Server {
 
         /** Class that controls the server's interaction with the outgoing data to clients' channel. */
         private class OutputTransmission {
-            private ByteBuffer packageToSend = ByteBuffer.allocate(0);
+            private @Nullable ByteBuffer packageToSend;
 
             private void sendData(ByteBuffer packageToSend) {
-                checkState(hasSentData()); // transmissions should come by one as clients are blocking.
+                checkState(this.packageToSend == null); // transmissions should come by one as clients are blocking.
                 this.packageToSend = packageToSend;
             }
 
             private boolean hasSentData() {
-                return !packageToSend.hasRemaining();
+                return packageToSend != null && !packageToSend.hasRemaining();
             }
 
             private void writeData() {
+                checkState(packageToSend != null);
                 try {
                     channel.write(packageToSend);
                 } catch (IOException e) {
-                    System.out.println("Writing to channel failed:" + e.getMessage());
+                    logger.severe("Writing to channel failed:" + e.getMessage());
                 }
+            }
+
+            private void finalizeWrite() {
+                packageToSend = null;
             }
         }
     }
