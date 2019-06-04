@@ -221,7 +221,7 @@ public class Server {
             // execute something
             currentStatus.finalizeRead();
             int queryType = currentStatus.queryTypeBuffer.getInt();
-            String query = new String(currentStatus.receivedData.array(), StandardCharsets.UTF_8);
+            String query = new String(currentStatus.receivedData.array());
             if (queryType == 2) {
                 threadPool.submit(() -> executeGet(transmissionController, query));
             } else if (queryType == 1) {
@@ -278,7 +278,6 @@ public class Server {
             System.out.println("Nonexistent file");
             controller.addFailedQuery();
         }
-11
         var fileList = path.toFile().listFiles();
         if (fileList == null) {
             System.err.println("Could not get list of files in directory.");
@@ -297,7 +296,7 @@ public class Server {
     private byte[] fileToBytes(File file) {
         String fileName = file.getName();
         byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
-        byte[] encodedFile = StandardCharsets.UTF_16.encode(fileName).array();
+        byte[] encodedFile = fileName.getBytes();
         System.out.println(fileName);
         System.out.println(encodedFile.length);
         System.out.println(Arrays.toString(encodedFile));

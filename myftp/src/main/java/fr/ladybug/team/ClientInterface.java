@@ -94,7 +94,7 @@ public class ClientInterface {
     }
 
     private static String askAddress() {
-        return "192.168.1.112";
+        return "192.168.1.67";
     }
 
     private static void printHelpMessage() {

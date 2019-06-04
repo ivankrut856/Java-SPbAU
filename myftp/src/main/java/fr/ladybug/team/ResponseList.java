@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
@@ -25,7 +26,7 @@ public class ResponseList {
             instance.isDirectory = new boolean[instance.directorySize];
             for (int i = 0; i < instance.directorySize; i++) {
                 int stringSize = stream.readInt();
-                String s = new String(stream.readNBytes(stringSize), Charset.forName("UTF-16"));
+                String s = new String(stream.readNBytes(stringSize));
                 instance.isDirectory[i] = stream.readNBytes(1)[0] == 1;
                 instance.filenames[i] = s;
             }
