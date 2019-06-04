@@ -91,8 +91,7 @@ public class Server {
                 if (key.isAcceptable()) {
                     SocketChannel sc = socketChannel.accept();
                     sc.configureBlocking(false);
-                    sc.register(selector, SelectionKey.
-                            OP_READ);
+                    sc.register(selector, SelectionKey.OP_READ, new Transmission());
                     sc.write(ByteBuffer.wrap("Connected".getBytes()));
                     System.out.println("Connection Accepted: " + sc.getLocalAddress() + "\n");
                 } else if (key.isReadable()) {
@@ -206,5 +205,11 @@ public class Server {
         String fileName = file.getName();
         byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(fileName.length()), fileName.getBytes()), isDirectory);
+    }
+
+    private class Transmission {
+        private ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
+        private ByteBuffer received;
+        private int packageSize;
     }
 }
