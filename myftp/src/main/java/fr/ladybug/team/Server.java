@@ -10,10 +10,14 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class Server {
     private ServerSocketChannel serverSocket;
@@ -24,6 +28,7 @@ public class Server {
     private Selector writeSelector;
 
     private InetSocketAddress listenAddress;
+    private ExecutorService threadPool;
 
     public static void main(String[] args) {
         if (args.length != 2) {
@@ -54,7 +59,7 @@ public class Server {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        });
+        })
         var readThread = new Thread(() -> {
             try {
                 finalServer.read();
@@ -118,7 +123,8 @@ public class Server {
                 if (key.isAcceptable()) {
                     SocketChannel sc = serverSocket.accept();
                     sc.configureBlocking(false);
-                    sc.register(readSelector, SelectionKey.OP_READ, new InputTransmission());
+                    sc.register(acceptSelector, SelectionKey.OP_READ, new TransmissionController());
+//                    sc.write(ByteBuffer.wrap("Connected".getBytes()));
                     System.out.println("Connection Accepted: " + sc.getLocalAddress() + "\n");
                 } else {
                     System.err.println("Error: key not supported by server.");
@@ -137,7 +143,8 @@ public class Server {
     }
 
     private void processRead(SelectionKey key) {
-        InputTransmission currentStatus = (InputTransmission)key.attachment();
+        TransmissionController transmissionController = (TransmissionController) key.attachment();
+        TransmissionController.InputTransmission currentStatus = transmissionController.inputTransmission;
         SocketChannel channel = (SocketChannel)key.channel();
         if (!currentStatus.hasReadSize()) {
             // read size of next package
@@ -149,28 +156,44 @@ public class Server {
         }
         // read happened, check if it ended OK
         if (currentStatus.hasReadData()) {
-            // execute something??
+            // execute something
+            currentStatus.finalizeRead();
+            int queryType = currentStatus.queryTypeBuffer.getInt();
+            String query = new String(currentStatus.receivedData.array(), StandardCharsets.UTF_8);
+            if (queryType == 1) {
+                threadPool.submit(() -> executeGet(transmissionController, query));
+            } else if (queryType == 2) {
+                threadPool.submit(() -> executeList(transmissionController, query));
+            } else {
+                System.err.println("Invalid query type: " + queryType);
+            }
+            currentStatus.reset();
         }
     }
 
-    private void executeGet(SocketChannel output, String pathName) throws IOException {
+    private void executeGet(TransmissionController controller, String pathName) {
         var path = Paths.get(pathName);
         if (!Files.isRegularFile(path)) {
             System.out.println("Nonexistent file.");
-            writeFailure(output);
+            controller.addOutputQuery(Ints.toByteArray(-1));
         }
 
-        byte[] fileBytes = Files.readAllBytes(path);
+        byte[] fileBytes = new byte[0];
+        try {
+            fileBytes = Files.readAllBytes(path);
+        } catch (IOException e) {
+            System.err.println("Failed to read file " + pathName);
+        }
         byte[] lengthBytes = Ints.toByteArray(fileBytes.length);
         System.out.println("File size: " + fileBytes.length);
-        writeSuccess(output, ArrayUtils.addAll(lengthBytes, fileBytes));
+        controller.addOutputQuery(ArrayUtils.addAll(lengthBytes, fileBytes));
     }
 
-    private void executeList(SocketChannel output, String pathName) throws IOException {
+    private void executeList(TransmissionController controller, String pathName) {
         var path = Paths.get(pathName);
         if (!Files.exists(path)) {
             System.out.println("Nonexistent file");
-            writeFailure(output);
+            controller.addOutputQuery(Ints.toByteArray(-1));
         }
 
         var fileList = path.toFile().listFiles();
@@ -183,93 +206,86 @@ public class Server {
         for (var file : fileList) {
             result = ArrayUtils.addAll(result, fileToBytes(file));
         }
-        writeSuccess(output, result);
+        controller.addOutputQuery(result);
     }
 
-    /**
-     * Outputs the result of a failed operation to the given channel: -1 byte of information.
-     * @param channel the channel to write to.
-     */
-    private void writeFailure(SocketChannel channel) throws IOException {
-        var output = new OutputTransmission(ByteBuffer.wrap(Ints.toByteArray(-1)));
-        //TODO register with selector
-    }
-
-    /**
-     * Outputs the result of a successful operation to the given channel.
-     * First it outputs the length of the remaining data, as an integer, then the data as a byte array.
-     * @param channel the channel to write to.
-     * @param result the result of the operation that should be sent through the channel.
-     */
-    private void writeSuccess(SocketChannel channel, byte[] result) throws IOException {
-        var output = new OutputTransmission(ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(result.length), result)));
-        //TODO register with selector
-    }
-
-    /**
-     * Gets the necessary info about the given file and converts it to a byte array.
-     * Format: an integer (the file name length), a string (the file name) and a boolean (is the file a directory), concatenated.
-     * @param file the file to get information about.
-     * @return the resulting byte array.
-     */
     private byte[] fileToBytes(File file) {
         String fileName = file.getName();
         byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(fileName.length()), fileName.getBytes()), isDirectory);
     }
 
-    private class InputTransmission {
-        private final int defaultPackageSize = -5;
-        private ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
-        private ByteBuffer receivedData;
-        private int packageSize;
+    private class TransmissionController {
+        SocketChannel outputChannel;
+        private InputTransmission inputTransmission;
+        private OutputTransmission outputTransmission;
 
-        private boolean hasReadSize() {
-            return packageSize != defaultPackageSize;
+        private TransmissionController(SocketChannel inputChannel) {
+            outputChannel = inputChannel; // it's a channel
         }
 
-        private boolean hasReadData() {
-            return receivedData.hasRemaining();
+        private void addOutputQuery(byte[] data) {
+            outputTransmission = new OutputTransmission(ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(data.length), data)));
         }
 
-        private void readSize(SocketChannel channel) {
-            try {
-                channel.read(packageSizeBuffer);
-            } catch (IOException e) {
-                System.err.println("Failed read from channel: " + e.getMessage());
+        private class InputTransmission {
+            private final int defaultPackageSize = -5;
+            private ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
+            private ByteBuffer queryTypeBuffer = ByteBuffer.allocate(Integer.BYTES);
+            private ByteBuffer receivedData;
+            private int packageSize;
+
+            private boolean hasReadSize() {
+                return packageSize != defaultPackageSize;
             }
-            if (!packageSizeBuffer.hasRemaining()) {
-                packageSizeBuffer.flip();
-                packageSize = packageSizeBuffer.getInt();
-                if (packageSize >= 0) {
-                    receivedData = ByteBuffer.allocate(packageSize);
+
+            private boolean hasReadData() {
+                return receivedData.hasRemaining();
+            }
+
+            private void readSize(SocketChannel channel) {
+                try {
+                    channel.read(packageSizeBuffer);
+                } catch (IOException e) {
+                    System.err.println("Failed read from channel: " + e.getMessage());
+                }
+                if (!packageSizeBuffer.hasRemaining()) {
+                    packageSizeBuffer.flip();
+                    packageSize = packageSizeBuffer.getInt();
+                    receivedData = ByteBuffer.allocate(packageSize - Integer.BYTES);
                 }
             }
-        }
 
-        private void readData(SocketChannel channel) {
-            try {
-                channel.read(receivedData);
-            } catch (IOException e) {
-                System.err.println("Failed read from channel: " + e.getMessage());
+            private void readData(SocketChannel channel) {
+                try {
+                    channel.read(new ByteBuffer[]{queryTypeBuffer, receivedData});
+                } catch (IOException e) {
+                    System.err.println("Failed read from channel: " + e.getMessage());
+                }
+            }
+
+            private void finalizeRead() {
+                queryTypeBuffer.flip();
+                receivedData.flip();
+            }
+
+            private void reset() {
+                packageSizeBuffer.clear();
+                queryTypeBuffer.clear();
+                packageSize = defaultPackageSize;
             }
         }
 
-        private void reset() {
-            packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
-            packageSize = defaultPackageSize;
-        }
-    }
+        private class OutputTransmission {
+            private ByteBuffer sentData;
 
-    private class OutputTransmission {
-        private ByteBuffer sentData;
+            private OutputTransmission(ByteBuffer sentData) {
+                this.sentData = sentData;
+            }
 
-        private OutputTransmission(ByteBuffer sentData) {
-            this.sentData = sentData;
-        }
-
-        private boolean hasSentData() {
-            return false;
+            private boolean hasSentData() {
+                return false;
+            }
         }
     }
 }
