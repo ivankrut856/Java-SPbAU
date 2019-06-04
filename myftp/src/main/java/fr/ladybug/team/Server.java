@@ -152,6 +152,11 @@ public class Server {
             while (iterator.hasNext()) {
                 SelectionKey key = (SelectionKey) iterator.next();
 
+                if (!key.isValid()) {
+                    key.cancel();
+                    continue;
+                }
+
                 if (key.isReadable()) {
                     processRead(key);
                 } else {
@@ -174,6 +179,11 @@ public class Server {
             Iterator iterator = readyKeys.iterator();
             while (iterator.hasNext()) {
                 SelectionKey key = (SelectionKey) iterator.next();
+
+                if (!key.isValid()) {
+                    key.cancel();
+                    continue;
+                }
 
                 if (key.isWritable()) {
                     processWrite(key);
@@ -224,15 +234,19 @@ public class Server {
     }
 
     private void processWrite(SelectionKey key) {
+        System.out.println("Processing...");
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.OutputTransmission currentStatus = transmissionController.outputTransmission;
 
         if (currentStatus == null) {
+            System.out.println("null");
             return;
-        } else if (!currentStatus.hasSentData()) {
+        } else if (currentStatus.hasSentData()) {
+            System.out.println("to cancel");
             key.cancel();
             transmissionController.outputTransmission = null;
         } else {
+            System.out.println("writing..");
             currentStatus.writeData();
         }
     }
@@ -297,6 +311,7 @@ public class Server {
             checkState(outputTransmission == null); // transmissions should come by one as clients are blocking
             try {
                 channel.register(writeSelector, SelectionKey.OP_WRITE, this);
+                writeSelector.wakeup();
             } catch (ClosedChannelException e) {
                 System.out.println("The client has disconnected");
                 return;
@@ -308,6 +323,7 @@ public class Server {
             checkState(outputTransmission == null); // transmissions should come by one as clients are blocking
             try {
                 channel.register(writeSelector, SelectionKey.OP_WRITE, this);
+                writeSelector.wakeup();
             } catch (ClosedChannelException e) {
                 System.out.println("The client has disconnected");
                 return;

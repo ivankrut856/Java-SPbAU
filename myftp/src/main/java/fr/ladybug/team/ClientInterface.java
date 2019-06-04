@@ -51,6 +51,7 @@ public class ClientInterface {
                 case "list": {
                     try {
                         ResponseList responseList = ResponseList.fromBytes(response);
+                        System.out.println("got response");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
