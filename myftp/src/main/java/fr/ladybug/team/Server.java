@@ -207,11 +207,10 @@ public class Server {
     private void processRead(SelectionKey key) {
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.InputTransmission currentStatus = transmissionController.inputTransmission;
-        SocketChannel channel = (SocketChannel)key.channel();
         System.out.println("Started processing read.");
         if (!currentStatus.hasReadSize()) {
             // read size of next package
-            currentStatus.readSize(channel);
+            currentStatus.readSize();
         } else {
             // read the package data
             if (currentStatus.packageSize <= Integer.BYTES) {
@@ -219,7 +218,7 @@ public class Server {
                 transmissionController.addFailedQuery();
                 currentStatus.reset();
             } else {
-                currentStatus.readData(channel);
+                currentStatus.readData();
             }
         }
 
@@ -240,6 +239,20 @@ public class Server {
             }
             System.out.println("Submitted a query.");
             currentStatus.reset();
+        }
+    }
+
+    private void processWrite(SelectionKey key) {
+        TransmissionController transmissionController = (TransmissionController) key.attachment();
+        TransmissionController.OutputTransmission currentStatus = transmissionController.outputTransmission;
+
+        if (currentStatus == null) {
+            return;
+        } else if (!currentStatus.hasSentData()) {
+            key.cancel();
+            transmissionController.outputTransmission = null;
+        } else {
+            currentStatus.writeData();
         }
     }
 
@@ -293,7 +306,7 @@ public class Server {
         private OutputTransmission outputTransmission;
 
         private TransmissionController(SocketChannel channel) {
-            this.channel = channel; // it's a channel
+            this.channel = channel;
             inputTransmission = new InputTransmission();
         }
 
@@ -320,7 +333,7 @@ public class Server {
                 return receivedData != null && !receivedData.hasRemaining();
             }
 
-            private void readSize(SocketChannel channel) {
+            private void readSize() {
                 try {
                     channel.read(packageSizeBuffer);
                 } catch (IOException e) {
@@ -333,7 +346,7 @@ public class Server {
                 }
             }
 
-            private void readData(SocketChannel channel) {
+            private void readData() {
                 Objects.requireNonNull(receivedData);
                 try {
                     channel.read(new ByteBuffer[]{queryTypeBuffer, receivedData});
@@ -362,7 +375,15 @@ public class Server {
             }
 
             private boolean hasSentData() {
-                return false;
+                return !sentData.hasRemaining();
+            }
+
+            private void writeData() {
+                try {
+                    channel.write(sentData);
+                } catch (IOException e) {
+                    System.err.println("Writing to channel failed:" + e.getMessage());
+                }
             }
         }
     }
