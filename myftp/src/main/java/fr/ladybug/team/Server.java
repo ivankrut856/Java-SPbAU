@@ -295,7 +295,7 @@ public class Server {
         String fileName = file.getName();
         byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
         byte[] encodedFile = StandardCharsets.UTF_8.encode(fileName).array();
-        return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(fileName.length()), encodedFile), isDirectory);
+        return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(encodedFile.length), encodedFile), isDirectory);
     }
 
     private class TransmissionController {
