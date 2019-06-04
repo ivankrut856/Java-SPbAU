@@ -58,6 +58,7 @@ public class ClientInterface {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    break;
                 }
                 case "get": {
                     try {
@@ -65,6 +66,7 @@ public class ClientInterface {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    break;
                 }
                 default: {
                     throw new RuntimeException("Internal consistency fail. Should not normally happen");

@@ -199,13 +199,6 @@ public class Server {
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.InputTransmission currentStatus = transmissionController.inputTransmission;
         System.out.println("Started processing read.");
-        if (!((SocketChannel) key.channel()).isConnected()) {
-            try {
-                key.channel().close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
 
         if (!currentStatus.hasReadSize()) {
             // read size of next package
@@ -228,9 +221,9 @@ public class Server {
             currentStatus.finalizeRead();
             int queryType = currentStatus.queryTypeBuffer.getInt();
             String query = new String(currentStatus.receivedData.array(), StandardCharsets.UTF_8);
-            if (queryType == 1) {
+            if (queryType == 2) {
                 threadPool.submit(() -> executeGet(transmissionController, query));
-            } else if (queryType == 2) {
+            } else if (queryType == 1) {
                 threadPool.submit(() -> executeList(transmissionController, query));
             } else {
                 System.err.println("Invalid query type: " + queryType);
@@ -278,6 +271,7 @@ public class Server {
     }
 
     private void executeList(TransmissionController controller, String pathName) {
+        System.out.println(pathName);
         var path = Paths.get(pathName);
         if (!Files.exists(path)) {
             System.out.println("Nonexistent file");

@@ -27,7 +27,7 @@ public class ResponseList {
                 instance.filenames[i] = s;
             }
             return instance;
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             var exception = new IOException("Message format corrupted");
             exception.addSuppressed(e);
             throw exception;
