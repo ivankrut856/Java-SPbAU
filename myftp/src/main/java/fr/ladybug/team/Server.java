@@ -102,21 +102,21 @@ public class Server {
 
         acceptingThread = new Thread(() -> {
             try {
-                this.accept();
+                accept();
             } catch (IOException e) {
                 logger.severe("IOException while processing accept connection: " + e.getMessage());
             }
         });
         readingThread = new Thread(() -> {
             try {
-                this.read();
+                read();
             } catch (IOException e) {
                 logger.severe("IOException while processing read connection: " + e.getMessage());
             }
         });
         writingThread = new Thread(() -> {
             try {
-                this.write();
+                write();
             } catch (IOException e) {
                 logger.severe("IOException while processing write connection: " + e.getMessage());
             }
@@ -161,7 +161,7 @@ public class Server {
                     socketChannel.configureBlocking(false);
                     socketChannel.register(readSelector, SelectionKey.OP_READ, new TransmissionController(socketChannel));
                     readSelector.wakeup();
-                    logger.info("Connection Accepted: " + socketChannel.getLocalAddress() + "\n");
+                    logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
                 } else {
                     logger.severe("Error: key not supported by server.");
                 }
@@ -184,6 +184,7 @@ public class Server {
                     continue;
                 } else if (key.isReadable()) {
                     TransmissionController controller = (TransmissionController)key.attachment();
+                    logger.info("Trying to read from " + controller.channel.getLocalAddress());
                     controller.processRead();
                 } else {
                     logger.severe("Error: key not supported by server.");
@@ -208,6 +209,7 @@ public class Server {
                     continue;
                 } else if (key.isWritable()) {
                     TransmissionController controller = (TransmissionController)key.attachment();
+                    logger.info("Trying to write to " + controller.channel.getLocalAddress());
                     controller.processWrite(key);
                 } else {
                     logger.severe("Error: key not supported by server.");
@@ -322,16 +324,11 @@ public class Server {
             if (!inputTransmission.hasReadSize()) { // read size of next package
                 inputTransmission.readSize();
             } else { // read the package data
-                if (inputTransmission.packageSize <= Integer.BYTES) { // all packages have at least an int
-                    logger.severe("Invalid package size: " + inputTransmission.packageSize);
-                    addFailedQuery();
-                    inputTransmission.reset();
-                } else {
-                    inputTransmission.readData();
-                }
+                inputTransmission.readData();
             }
 
             if (inputTransmission.hasReadData()) {
+                logger.info("Read package with size " + inputTransmission.packageSize);
                 inputTransmission.finalizeRead();
                 int queryType = inputTransmission.queryTypeBuffer.getInt();
                 String query = new String(inputTransmission.receivedData.array());
@@ -350,10 +347,10 @@ public class Server {
 
         /** Method that should be called when the channel is ready to be written to. */
         private void processWrite(@NotNull SelectionKey key) {
-            if (outputTransmission.packageToSend != null && outputTransmission.hasSentData()) {
+            if (outputTransmission.shouldSendData() && outputTransmission.hasSentData()) {
                 logger.info("Sent response.");
-                key.cancel();
                 outputTransmission.finalizeWrite();
+                key.cancel();
             } else if (outputTransmission.packageToSend != null) {
                 outputTransmission.writeData();
             }
@@ -380,6 +377,12 @@ public class Server {
                 if (!packageSizeBuffer.hasRemaining()) {
                     packageSizeBuffer.flip();
                     packageSize = packageSizeBuffer.getInt();
+                    if (inputTransmission.packageSize <= Integer.BYTES) { // all packages have at least an int
+                        logger.severe("Invalid package size: " + inputTransmission.packageSize);
+                        addFailedQuery();
+                        reset();
+                        return;
+                    }
                     receivedData = ByteBuffer.allocate(packageSize - Integer.BYTES);
                 }
             }
@@ -391,6 +394,7 @@ public class Server {
             private void readCorrectly(ByteBuffer[] byteBuffers) {
                 try {
                     if (channel.read(byteBuffers) == -1) {
+                        logger.info("Closed channel " + channel.getLocalAddress());
                         channel.close(); //closes channel elegantly if disconnect happened.
                     }
                 } catch (IOException e) {
@@ -414,9 +418,13 @@ public class Server {
         private class OutputTransmission {
             private @Nullable ByteBuffer packageToSend;
 
-            private void sendData(ByteBuffer packageToSend) {
+            private void sendData(@NotNull ByteBuffer packageToSend) {
                 checkState(this.packageToSend == null); // transmissions should come by one as clients are blocking.
                 this.packageToSend = packageToSend;
+            }
+
+            private boolean shouldSendData() {
+                return packageToSend != null;
             }
 
             private boolean hasSentData() {
