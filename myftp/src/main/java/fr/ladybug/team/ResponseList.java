@@ -5,6 +5,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class ResponseList {
 
     private int directorySize;
@@ -17,6 +19,7 @@ public class ResponseList {
         var instance = new ResponseList();
         try {
             instance.directorySize = stream.readInt();
+            checkArgument(instance.directorySize >= 0);
             instance.filenames = new String[instance.directorySize];
             for (int i = 0; i < instance.directorySize; i++) {
                 int stringSize = stream.readInt();

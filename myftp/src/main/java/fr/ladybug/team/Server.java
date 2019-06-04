@@ -199,6 +199,14 @@ public class Server {
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.InputTransmission currentStatus = transmissionController.inputTransmission;
         System.out.println("Started processing read.");
+        if (!((SocketChannel) key.channel()).isConnected()) {
+            try {
+                key.channel().close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         if (!currentStatus.hasReadSize()) {
             // read size of next package
             currentStatus.readSize();
