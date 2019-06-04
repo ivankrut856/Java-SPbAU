@@ -25,4 +25,8 @@ public class ResponseGet {
             throw exception;
         }
     }
+
+    public byte[] getFileContent() {
+        return fileContent;
+    }
 }

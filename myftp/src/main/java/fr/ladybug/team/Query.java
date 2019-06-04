@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 public class Query {
+
     private int taskName;
     private String message;
 
@@ -24,7 +25,7 @@ public class Query {
         int packageSize = 0;
 
         packageSize += Integer.BYTES;
-        var bytes = message.getBytes(StandardCharsets.UTF_16);
+        var bytes = message.getBytes();
         packageSize += bytes.length;
 
         var stream = new DataOutputStream(outputStream);
