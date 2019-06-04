@@ -6,10 +6,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -186,24 +183,6 @@ public class Server {
         }
     }
 
-    private void processWrite(SelectionKey key) {
-        TransmissionController transmissionController = (TransmissionController) key.attachment();
-        TransmissionController.OutputTransmission currentStatus = transmissionController.outputTransmission;
-
-        if (currentStatus == null) {
-            return;
-        }
-
-        var channel = (SocketChannel)key.channel();
-        if (!currentStatus.hasSentData()) {
-            key.cancel();
-            transmissionController.outputTransmission = null;
-        }
-        else {
-            currentStatus.write(channel);
-        }
-    }
-
     private void processRead(SelectionKey key) {
         TransmissionController transmissionController = (TransmissionController) key.attachment();
         TransmissionController.InputTransmission currentStatus = transmissionController.inputTransmission;
@@ -311,10 +290,22 @@ public class Server {
         }
 
         private void addOutputQuery(byte[] data) {
+            try {
+                channel.register(writeSelector, SelectionKey.OP_WRITE, this);
+            } catch (ClosedChannelException e) {
+                System.out.println("The client has disconnected");
+                return;
+            }
             outputTransmission = new OutputTransmission(ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(data.length), data)));
         }
 
         private void addFailedQuery() {
+            try {
+                channel.register(writeSelector, SelectionKey.OP_WRITE, this);
+            } catch (ClosedChannelException e) {
+                System.out.println("The client has disconnected");
+                return;
+            }
             outputTransmission = new OutputTransmission(ByteBuffer.wrap(Ints.toByteArray(-1)));
         }
 
