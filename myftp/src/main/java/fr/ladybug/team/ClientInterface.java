@@ -120,6 +120,12 @@ public class ClientInterface extends Application {
         client.load((List<FileView> views) -> {
             dataSupplier.clear();
             dataSupplier.addAll(views);
+        }, (message) -> {
+            var alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Connection");
+            alert.setHeaderText("Status");
+            alert.setContentText("Connection lost");
+            Platform.exit();
         });
     }
 }

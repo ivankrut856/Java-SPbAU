@@ -30,6 +30,7 @@ public class Client {
 
     public Client(String remoteAddress) throws IOException {
         server = new Socket(remoteAddress, 8179);
+
         inputStream = server.getInputStream();
         outputStream = server.getOutputStream();
 
@@ -37,14 +38,14 @@ public class Client {
         fileTree.add(".");
     }
 
-    public void load(Consumer<List<FileView>> onLoad) {
+    public void load(Consumer<List<FileView>> onLoad, Consumer<String> onError) {
         var client = this;
         var task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
                 var response = ResponseList.fromBytes(client.makeQuery(new Query(Query.QueryType.LIST, getFullPath())));
                 if (!response.isValid()) {
-                    System.err.println(response.getError());
+                    Platform.runLater(() -> onError.accept(response.getError()));
                     return null;
                 }
                 List<FileView> folders = new ArrayList<>();
