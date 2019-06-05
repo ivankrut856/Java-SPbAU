@@ -11,6 +11,8 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -229,10 +231,18 @@ public class Server {
      */
     private void executeGet(@NotNull TransmissionController controller, @NotNull String pathName) {
         logger.info("Executing get for " + pathName);
-        var path = Paths.get(pathName);
+        Path path;
+        try {
+             path = Paths.get(pathName);
+        } catch (InvalidPathException notAFile) {
+            logger.info("File " + pathName + " does not exist.");
+            controller.addQueryForIncorrectFile();
+            return;
+        }
         if (!Files.isRegularFile(path)) {
             logger.info("File " + pathName + " does not exist.");
             controller.addQueryForIncorrectFile();
+            return;
         }
         var fileBytes = new byte[0];
         try {
@@ -252,10 +262,18 @@ public class Server {
      */
     private void executeList(@NotNull TransmissionController controller, @NotNull String pathName) {
         logger.info("Executing list for " + pathName);
-        var path = Paths.get(pathName);
+        Path path;
+        try {
+            path = Paths.get(pathName);
+        } catch (InvalidPathException notADirectory) {
+            logger.info("Directory " + pathName + " does not exist.");
+            controller.addQueryForIncorrectFile();
+            return;
+        }
         if (!Files.isDirectory(path)) {
             logger.info("File " + pathName + " does not exist or is not a directory.");
             controller.addQueryForIncorrectFile();
+            return;
         }
         var fileList = path.toFile().listFiles();
         if (fileList == null) {
