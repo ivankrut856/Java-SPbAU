@@ -4,14 +4,18 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.scene.control.Alert;
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -33,9 +37,7 @@ public class Client {
         fileTree.add(".");
     }
 
-    public void load(final ObservableList<FileView> dataSupplier) {
-        dataSupplier.clear();
-        dataSupplier.addAll(FXCollections.observableArrayList(FileView.LOADING));
+    public void load(Consumer<List<FileView>> onLoad) {
         var client = this;
         var task = new Task<Void>() {
             @Override
@@ -46,11 +48,12 @@ public class Client {
                     System.err.println(response.getError());
                     return null;
                 }
+                List<FileView> folders = new ArrayList<>();
+                if (fileTree.size() != 1)
+                    folders.add(FileView.PARENT);
+                folders.addAll(response.toFileViews());
                 Platform.runLater(() -> {
-                    dataSupplier.clear();
-                    if (fileTree.size() != 1)
-                        dataSupplier.add(FileView.PARENT);
-                    dataSupplier.addAll(FXCollections.observableArrayList(response.toFileViews()));
+                    onLoad.accept(folders);
                 });
                 return null;
             }
@@ -94,15 +97,27 @@ public class Client {
         server.close();
     }
 
-    public void saveFile(String filename) {
+    public void saveFile(String filename, Consumer<String> onFinishInformer) {
+        byte[] content = null;
         try {
             var response = ResponseGet.fromBytes(makeQuery(new Query(2, getFullPath() + FileSystems.getDefault().getSeparator() + filename)));
             if (!response.isValid()) {
                 System.err.println(response.getError());
             }
-            System.out.println(new String(response.getFileContent()));
-        } catch (IOException e) {
-            throw new RuntimeException("", e);
+            content = response.getFileContent();
+
+        } catch (IOException ignore) {
+            onFinishInformer.accept("Can not download file");
+            return;
         }
+
+        try {
+            FileUtils.copyToFile(new ByteArrayInputStream(content), new File(filename));
+        } catch (IOException e) {
+            onFinishInformer.accept("Can not save the file. Check your privilege");
+            return;
+        }
+
+        onFinishInformer.accept(String.format("%s was successfully downloaded", filename));
     }
 }

@@ -4,22 +4,17 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.ListCell;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
@@ -45,6 +40,7 @@ public class ClientInterface extends Application {
     }
 
     private ObservableList<FileView> dataSupplier;
+    private Client client;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -70,9 +66,10 @@ public class ClientInterface extends Application {
             }
         }
 
-        final Client client = tmpClient;
+        client = tmpClient;
         dataSupplier = FXCollections.observableArrayList();
-        client.load(dataSupplier);
+
+        loadCurrentFolder();
 
         logger.info("initial load");
 
@@ -87,12 +84,18 @@ public class ClientInterface extends Application {
                     else {
                         client.pushDir(currentView.getFilename());
                     }
-                    client.load(dataSupplier);
+                    loadCurrentFolder();
                 }
                 else {
                     if (currentView == FileView.LOADING)
                         return;
-                    client.saveFile(currentView.getFilename());
+                    client.saveFile(currentView.getFilename(), (message) -> {
+                        var alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("File download");
+                        alert.setHeaderText("Status");
+                        alert.setContentText(message);
+                        alert.show();
+                    });
                 }
             }
         });
@@ -101,10 +104,18 @@ public class ClientInterface extends Application {
         pane.getChildren().add(listView);
 
         Scene scene = new Scene(pane, 300, 600);
-//        scene.
         primaryStage.setScene(scene);
+        primaryStage.setMinHeight(100);
+        primaryStage.setMinWidth(200);
         primaryStage.show();
+    }
 
-
+    private void loadCurrentFolder() {
+        dataSupplier.clear();
+        dataSupplier.addAll(FXCollections.observableArrayList(FileView.LOADING));
+        client.load((List<FileView> views) -> {
+            dataSupplier.clear();
+            dataSupplier.addAll(views);
+        });
     }
 }
