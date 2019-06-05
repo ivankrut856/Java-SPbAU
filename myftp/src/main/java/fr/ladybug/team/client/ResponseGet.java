@@ -1,4 +1,4 @@
-package fr.ladybug.team;
+package fr.ladybug.team.client;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

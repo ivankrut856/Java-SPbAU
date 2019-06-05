@@ -1,5 +1,10 @@
 package fr.ladybug.team;
 
+import fr.ladybug.team.client.Client;
+import fr.ladybug.team.client.Query;
+import fr.ladybug.team.client.ResponseGet;
+import fr.ladybug.team.client.ResponseList;
+import fr.ladybug.team.server.Server;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

@@ -1,5 +1,7 @@
-package fr.ladybug.team;
+package fr.ladybug.team.client;
 
+import fr.ladybug.team.client.Client;
+import fr.ladybug.team.client.FileView;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;

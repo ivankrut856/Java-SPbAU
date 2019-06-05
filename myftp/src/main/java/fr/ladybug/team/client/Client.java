@@ -1,4 +1,4 @@
-package fr.ladybug.team;
+package fr.ladybug.team.client;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;

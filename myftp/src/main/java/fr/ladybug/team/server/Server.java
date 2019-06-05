@@ -1,6 +1,7 @@
-package fr.ladybug.team;
+package fr.ladybug.team.server;
 
 import com.google.common.primitives.Ints;
+import fr.ladybug.team.client.Query;
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
