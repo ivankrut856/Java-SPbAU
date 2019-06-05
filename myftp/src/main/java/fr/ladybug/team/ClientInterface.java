@@ -4,22 +4,15 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextInputDialog;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
@@ -85,14 +78,14 @@ public class ClientInterface extends Application {
                     if (currentView == FileView.PARENT)
                         client.popDir();
                     else {
-                        client.pushDir(currentView.getFilename());
+                        client.pushDir(currentView.getFileName());
                     }
                     client.load(dataSupplier);
                 }
                 else {
                     if (currentView == FileView.LOADING)
                         return;
-                    client.saveFile(currentView.getFilename());
+                    client.saveFile(currentView.getFileName());
                 }
             }
         });
