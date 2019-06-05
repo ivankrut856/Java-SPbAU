@@ -15,13 +15,17 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ *  Class responsible for running a client that can send the commands list and get to a server.
+ *  The get command accepts the path to a file and sends the file's size and its content.
+ *  The list command accepts the path to a directory and sends the amount of Files in it, as well as a list of names,
+ *  and a boolean parameter that says whether a given File is a directory.
+ */
 public class Client {
-    private Socket server;
-    private InputStream inputStream;
-    private OutputStream outputStream;
-
-    private Stack<String> fileTree;
-
+    private @NotNull Socket server;
+    private @NotNull InputStream inputStream;
+    private @NotNull OutputStream outputStream;
+    private @NotNull Stack<String> fileTree;
     private @NotNull static final Logger logger = Logger.getAnonymousLogger();
 
     public Client(String remoteAddress) throws IOException {
@@ -89,7 +93,7 @@ public class Client {
 
     public void shutdown() throws IOException {
         if (server.isClosed())
-            throw new IllegalStateException("The client is already shutdown");
+            throw new IllegalStateException("The client is already shut down.");
         server.close();
     }
 
