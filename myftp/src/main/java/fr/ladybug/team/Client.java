@@ -44,10 +44,12 @@ public class Client {
                 var response = ResponseList.fromBytes(client.makeQuery(new Query(1, getFullPath())));
                 if (!response.isValid()) {
                     System.err.println(response.getError());
+                    return null;
                 }
                 Platform.runLater(() -> {
                     dataSupplier.clear();
-                    dataSupplier.add(FileView.PARENT);
+                    if (fileTree.size() != 1 || true)
+                        dataSupplier.add(FileView.PARENT);
                     dataSupplier.addAll(FXCollections.observableArrayList(response.toFileViews()));
                 });
                 return null;

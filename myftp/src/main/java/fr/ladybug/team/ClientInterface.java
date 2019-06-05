@@ -92,7 +92,6 @@ public class ClientInterface extends Application {
                 else {
                     if (currentView == FileView.LOADING)
                         return;
-
                     client.saveFile(currentView.getFilename());
                 }
             }
@@ -102,6 +101,7 @@ public class ClientInterface extends Application {
         pane.getChildren().add(listView);
 
         Scene scene = new Scene(pane, 300, 600);
+//        scene.
         primaryStage.setScene(scene);
         primaryStage.show();
 
