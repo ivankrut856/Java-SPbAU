@@ -80,7 +80,7 @@ class ServerClientInteractionTest {
         var secondQuery = client.makeQuery(new Query(Query.QueryType.GET, "src/not/a/directory/not/even/close"));
         var secondResult = ResponseGet.fromBytes(secondQuery);
         assertFalse(secondResult.isValid());
-        assertEquals("Directory does not exist.", secondResult.getError());
+        assertEquals("File does not exist.", secondResult.getError());
 
         var thirdQuery = client.makeQuery(new Query(Query.QueryType.LIST, "src/test/resources/file"));
         var thirdResult = ResponseList.fromBytes(thirdQuery);
