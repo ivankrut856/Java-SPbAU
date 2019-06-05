@@ -28,6 +28,14 @@ public class Client {
     private @NotNull Stack<String> fileTree;
     private @NotNull static final Logger logger = Logger.getAnonymousLogger();
 
+    /**
+     * Basic constructor for a client.
+     * Performs binding a socket to a remote server with given remote address and port
+     * Initialises basic state of the remote filesystem
+     * @param remoteAddress the remote address of the target server
+     * @param port the port to which the socket will be binded
+     * @throws IOException the exception is thrown when it is not possible to connect to the remote server
+     */
     public Client(String remoteAddress, int port) throws IOException {
         server = new Socket(remoteAddress, port);
 
@@ -38,6 +46,11 @@ public class Client {
         fileTree.add(".");
     }
 
+    /**
+     * Loads a list of files in the current directory
+     * @param onLoad the callback to successfully loaded list of files
+     * @param onError the callback to failure
+     */
     public void load(Consumer<List<FileView>> onLoad, Consumer<String> onError) {
         var client = this;
         var task = new Task<Void>() {
@@ -61,14 +74,22 @@ public class Client {
         new Thread(task).start();
     }
 
+    /**
+     * Constructs full path from root directory to current directory
+     * @return the full path from root directory to current directory
+     */
     public String getFullPath() {
         return fileTree.stream().collect(Collectors.joining(FileSystems.getDefault().getSeparator()));
     }
 
-    public void pushDir(String s) {
-        fileTree.add(s);
+    /** Changes the remote filesystem's working directory by pushing given directory to the current file tree
+     * @param directory the directory to push to the current filetree
+     */
+    public void pushDirectory(String directory) {
+        fileTree.add(directory);
     }
 
+    /** Changes the remote filesystem's working directory by removing top directory from the current file tree */
     public void popDir() {
         fileTree.pop();
     }
@@ -91,12 +112,18 @@ public class Client {
         return bytes;
     }
 
+    /** Shuts down the client */
     public void shutdown() throws IOException {
         if (server.isClosed())
             throw new IllegalStateException("The client is already shut down.");
         server.close();
     }
 
+    /**
+     * Saves the file with given filename in current working directory into current working folder in local machine
+     * @param filename the filename of the file which is to be saved
+     * @param onFinishInformer the callback for save finish
+     */
     public void saveFile(String filename, Consumer<String> onFinishInformer) {
         byte[] content = null;
         try {
