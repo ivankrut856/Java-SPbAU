@@ -94,7 +94,7 @@ public class Client {
         fileTree.pop();
     }
 
-    private byte[] makeQuery(Query query) throws IOException {
+    public byte[] makeQuery(Query query) throws IOException {
         logger.info("Message of the query executed: " + query.getQueryBody());
         logger.info("Task of the query executed: " + query.getQueryType());
         query.printToStream(outputStream);

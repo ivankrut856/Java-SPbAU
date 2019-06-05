@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
-
 public class ClientInterface extends Application {
     private static final int BASE_SCREEN_WIDTH = 300;
     private static final int BASE_SCREEN_HEIGHT = 600;
