@@ -72,6 +72,8 @@ class ServerClientInteractionTest {
 
         var secondQuery = client.makeQuery(new Query(Query.QueryType.GET, "src/test/resources/dir/file"));
         var secondResult = ResponseGet.fromBytes(secondQuery);
+        if (!secondResult.isValid())
+            System.err.println(secondResult.getError());
         assertTrue(secondResult.isValid());
         assertEquals("This is a file", new String(secondResult.getFileContent()));
     }
