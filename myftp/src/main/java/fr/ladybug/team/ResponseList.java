@@ -1,64 +1,73 @@
 package fr.ladybug.team;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+/** Class for storing and processing the server's response to a list query. */
 public class ResponseList {
-
     private int directorySize;
-    FileView[] fileViews;
+    private @Nullable FileView[] fileViews;
 
     private boolean valid = true;
-    private String errorMessage;
+    private @Nullable String errorMessage;
 
     private ResponseList() {}
 
-    public static ResponseList fromBytes(byte[] response) throws IOException {
+    /** Constructs a ResponseList from the server's response. */
+    public static @NotNull ResponseList fromBytes(@NotNull byte[] response) {
         var stream = new DataInputStream(new ByteArrayInputStream(response));
-        var instance = new ResponseList();
+        var responseList = new ResponseList();
         try {
-            instance.directorySize = stream.readInt();
-            checkArgument(instance.directorySize >= 0);
-            instance.fileViews = new FileView[instance.directorySize];
-            for (int i = 0; i < instance.directorySize; i++) {
+            responseList.directorySize = stream.readInt();
+            if (responseList.directorySize < -1) {
+                return errorResponse("Query execution failed.");
+            } else if (responseList.directorySize == -1) {
+                return errorResponse("Directory does not exist.");
+            }
+            responseList.fileViews = new FileView[responseList.directorySize];
+            for (int i = 0; i < responseList.directorySize; i++) {
                 int stringSize = stream.readInt();
                 String filename = new String(stream.readNBytes(stringSize));
                 boolean isDirectory = stream.readNBytes(1)[0] == 1;
-                instance.fileViews[i] = new FileView(filename, isDirectory);
+                responseList.fileViews[i] = new FileView(filename, isDirectory);
             }
-            return instance;
-        } catch (IOException | IllegalArgumentException e) {
-            return errorResponse("Message corrupted");
+            return responseList;
+        } catch (IOException e) {
+            return errorResponse("Response was corrupted.");
         }
     }
 
-    private static ResponseList errorResponse(String errorMessage) {
-        var instance = new ResponseList();
-        instance.valid = false;
-        instance.errorMessage = errorMessage;
-        return instance;
+    /** Constructs an error response with the given message. */
+    private static @NotNull ResponseList errorResponse(@NotNull String errorMessage) {
+        var errorResponse = new ResponseList();
+        errorResponse.valid = false;
+        errorResponse.errorMessage = errorMessage;
+        return errorResponse;
     }
 
-    public List<FileView> toFileViews() {
+    /** Returns a list of the response's FileViews. */
+    public @NotNull List<FileView> toFileViews() {
+        checkArgument(fileViews != null); // should only be called from valid ResponseLists.
         return Arrays.asList(fileViews);
     }
 
+    /** Returns true if the response is not erroneous, false otherwise. */
     public boolean isValid() {
         return valid;
     }
 
-    public String getError() {
+    /** Returns the error string associated with the response, or null if the response was correct. */
+    public @NotNull String getError() {
+        checkArgument(errorMessage != null); // should only be called from invalid ResponseLists.
         return errorMessage;
     }
 }

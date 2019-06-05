@@ -140,6 +140,7 @@ public class Server {
      */
     public void shutdown() throws InterruptedException {
         wasShutdown = true;
+        threadPool.shutdown();
         acceptingThread.interrupt();
         readingThread.interrupt();
         writingThread.interrupt();
@@ -184,7 +185,7 @@ public class Server {
                     key.cancel();
                     continue;
                 } else if (key.isReadable()) {
-                    TransmissionController controller = (TransmissionController)key.attachment();
+                    var controller = (TransmissionController)key.attachment();
                     logger.info("Trying to read from " + controller.channel.getLocalAddress());
                     controller.processRead();
                 } else {
@@ -209,7 +210,7 @@ public class Server {
                     key.cancel();
                     continue;
                 } else if (key.isWritable()) {
-                    TransmissionController controller = (TransmissionController)key.attachment();
+                    var controller = (TransmissionController)key.attachment();
                     logger.info("Trying to write to " + controller.channel.getLocalAddress());
                     controller.processWrite(key);
                 } else {
@@ -232,13 +233,13 @@ public class Server {
             logger.info("File " + pathName + " does not exist.");
             controller.addQueryForIncorrectFile();
         }
-        byte[] fileBytes = new byte[0];
+        var fileBytes = new byte[0];
         try {
             fileBytes = Files.readAllBytes(path);
         } catch (IOException e) {
             logger.severe("Failed to read file " + pathName);
         }
-        byte[] lengthBytes = Ints.toByteArray(fileBytes.length);
+        var lengthBytes = Ints.toByteArray(fileBytes.length);
         logger.info("Successfully read file, size is " + fileBytes.length);
         controller.addOutputQuery(ArrayUtils.addAll(lengthBytes, fileBytes));
     }
@@ -262,7 +263,7 @@ public class Server {
         } else {
             int size = fileList.length;
             logger.info("Successfully listed files in directory, found " + size + " files.");
-            byte[] result = Ints.toByteArray(size);
+            var result = Ints.toByteArray(size);
             for (var file : fileList) {
                 result = ArrayUtils.addAll(result, fileToBytes(file));
             }
@@ -279,8 +280,8 @@ public class Server {
      */
     private @NotNull byte[] fileToBytes(@NotNull File file) {
         String fileName = file.getName();
-        byte[] isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
-        byte[] encodedFile = fileName.getBytes();
+        var isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
+        var encodedFile = fileName.getBytes();
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(encodedFile.length), encodedFile), isDirectory);
     }
 

@@ -82,14 +82,15 @@ public class ClientInterface extends Application {
                     if (currentView == FileView.PARENT)
                         client.popDir();
                     else {
-                        client.pushDir(currentView.getFilename());
+                        client.pushDir(currentView.getFileName());
                     }
                     loadCurrentFolder();
                 }
                 else {
                     if (currentView == FileView.LOADING)
                         return;
-                    client.saveFile(currentView.getFilename(), (message) -> {
+
+                    client.saveFile(currentView.getFileName(), (message) -> {
                         var alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("File download");
                         alert.setHeaderText("Status");
