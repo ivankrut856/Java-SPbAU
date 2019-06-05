@@ -16,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkState;
+import static java.lang.Integer.max;
 
 /**
  *  Class responsible for running a server that can execute the commands list and get.
@@ -323,12 +324,18 @@ public class Server {
         private void processRead() {
             if (!inputTransmission.hasReadSize()) { // read size of next package
                 inputTransmission.readSize();
-            } else { // read the package data
+            } else if (!inputTransmission.hasReadData()) { // read the package data
                 inputTransmission.readData();
             }
 
             if (inputTransmission.hasReadData()) {
                 logger.info("Read package with size " + inputTransmission.packageSize);
+                if (!inputTransmission.isSizeCorrect()) {
+                    logger.severe("Invalid package size: " + inputTransmission.packageSize);
+                    addFailedQuery();
+                    inputTransmission.reset();
+                    return;
+                }
                 inputTransmission.finalizeRead();
                 int queryType = inputTransmission.queryTypeBuffer.getInt();
                 String query = new String(inputTransmission.receivedData.array());
@@ -377,14 +384,12 @@ public class Server {
                 if (!packageSizeBuffer.hasRemaining()) {
                     packageSizeBuffer.flip();
                     packageSize = packageSizeBuffer.getInt();
-                    if (inputTransmission.packageSize <= Integer.BYTES) { // all packages have at least an int
-                        logger.severe("Invalid package size: " + inputTransmission.packageSize);
-                        addFailedQuery();
-                        reset();
-                        return;
-                    }
-                    receivedData = ByteBuffer.allocate(packageSize - Integer.BYTES);
+                    receivedData = ByteBuffer.allocate(max(0, packageSize - Integer.BYTES));
                 }
+            }
+
+            private boolean isSizeCorrect() {
+                return inputTransmission.packageSize > Integer.BYTES; // all packages have at least an int
             }
 
             private void readData() {
