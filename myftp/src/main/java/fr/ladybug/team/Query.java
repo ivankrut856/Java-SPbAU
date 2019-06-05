@@ -5,15 +5,15 @@ import java.nio.charset.StandardCharsets;
 
 public class Query {
 
-    private int taskName;
+    private QueryType taskName;
     private String message;
 
-    public Query(int taskName, String message) {
+    public Query(QueryType taskName, String message) {
         this.taskName = taskName;
         this.message = message;
     }
 
-    public int getTaskName() {
+    public QueryType getTaskName() {
         return taskName;
     }
 
@@ -30,9 +30,23 @@ public class Query {
 
         var stream = new DataOutputStream(outputStream);
         stream.writeInt(packageSize);
-        stream.writeInt(taskName);
+        stream.writeInt(taskName.value());
         stream.write(bytes, 0, bytes.length);
         stream.flush();
         System.out.println("sent something");
+    }
+
+    public enum QueryType {
+        LIST(1),
+        GET(2);
+
+        private int value;
+        QueryType(int value) {
+            this.value = value;
+        }
+
+        public int value() {
+            return value;
+        }
     }
 }

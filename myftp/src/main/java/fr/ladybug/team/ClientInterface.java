@@ -77,6 +77,9 @@ public class ClientInterface extends Application {
         listView.setOnMouseClicked(event -> {
             if (event.getClickCount() >= 2) {
                 int selectedIndex = listView.getSelectionModel().getSelectedIndex();
+                if (selectedIndex == -1) {
+                    return;
+                }
                 var currentView = listView.getItems().get(selectedIndex);
                 if (currentView.isDirectory()) {
                     if (currentView == FileView.PARENT)

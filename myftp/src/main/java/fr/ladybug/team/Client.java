@@ -42,8 +42,7 @@ public class Client {
         var task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                System.out.println("call");
-                var response = ResponseList.fromBytes(client.makeQuery(new Query(1, getFullPath())));
+                var response = ResponseList.fromBytes(client.makeQuery(new Query(Query.QueryType.LIST, getFullPath())));
                 if (!response.isValid()) {
                     System.err.println(response.getError());
                     return null;
@@ -100,7 +99,7 @@ public class Client {
     public void saveFile(String filename, Consumer<String> onFinishInformer) {
         byte[] content = null;
         try {
-            var response = ResponseGet.fromBytes(makeQuery(new Query(2, getFullPath() + FileSystems.getDefault().getSeparator() + filename)));
+            var response = ResponseGet.fromBytes(makeQuery(new Query(Query.QueryType.GET, getFullPath() + FileSystems.getDefault().getSeparator() + filename)));
             if (!response.isValid()) {
                 System.err.println(response.getError());
             }
