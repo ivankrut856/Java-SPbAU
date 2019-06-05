@@ -9,7 +9,9 @@ public class FileView {
     private @NotNull String fileName;
     private boolean isDirectory;
 
+    /** View that is shown while the current directory is loading. */
     public static final @NotNull FileView LOADING = new FileView("Loading...", false);
+    /** View for the parent directory. */
     public static final @NotNull FileView PARENT = new FileView("..", true);
 
     /**
