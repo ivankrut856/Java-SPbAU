@@ -1,48 +1,63 @@
 package fr.ladybug.team;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+/** Class for storing and processing the server's response to a get query. */
 public class ResponseGet {
-
     private int fileSize;
-    private byte[] fileContent;
+    private @Nullable byte[] fileContent;
 
     private boolean valid = true;
-    private String errorMessage = null;
+    private @Nullable String errorMessage = null;
 
     private ResponseGet() {}
 
-    public static ResponseGet fromBytes(byte[] response) {
+    /** Constructs a ResponseGet from the server's response. */
+    public static @NotNull ResponseGet fromBytes(@NotNull byte[] response) {
         var stream = new DataInputStream(new ByteArrayInputStream(response));
-        var instance = new ResponseGet();
+        var responseGet = new ResponseGet();
         try {
-            instance.fileSize = stream.readInt();
-            instance.fileContent = stream.readNBytes(instance.fileSize);
-            return instance;
+            responseGet.fileSize = stream.readInt();
+            if (responseGet.fileSize < -1) {
+                return errorResponse("Query execution failed.");
+            } else if (responseGet.fileSize == -1) {
+                return errorResponse("Directory does not exist.");
+            }
+            responseGet.fileContent = stream.readNBytes(responseGet.fileSize);
+            return responseGet;
         } catch (IOException e) {
-            return errorResponse("Message corrupted");
+            return errorResponse("Response was corrupted.");
         }
     }
 
-    private static ResponseGet errorResponse(String errorMessage) {
+    /** Constructs an error response with the given message. */
+    private static @NotNull ResponseGet errorResponse(@NotNull String errorMessage) {
         var instance = new ResponseGet();
         instance.valid = false;
         instance.errorMessage = errorMessage;
         return instance;
     }
 
-    public byte[] getFileContent() {
+    public @NotNull byte[] getFileContent() {
+        checkArgument(fileContent != null); // should only be called from valid ResponseGets.
         return fileContent;
     }
 
+    /** Returns true if the response is not erroneous, false otherwise. */
     public boolean isValid() {
         return valid;
     }
 
-    public String getError() {
+    /** Returns the error string associated with the response, or null if the response was correct. */
+    public @NotNull String getError() {
+        checkArgument(errorMessage != null); // should only be called from invalid ResponseGets.
         return errorMessage;
     }
 }
