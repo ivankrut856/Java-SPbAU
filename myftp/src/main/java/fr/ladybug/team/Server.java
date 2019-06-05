@@ -55,7 +55,7 @@ public class Server {
             System.out.println("Port number should be a number.");
             return;
         }
-        Server server = null;
+        Server server;
         try {
             server = new Server(address, portNumber);
         } catch (IOException e) {

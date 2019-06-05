@@ -48,7 +48,7 @@ public class Client {
                 }
                 Platform.runLater(() -> {
                     dataSupplier.clear();
-                    if (fileTree.size() != 1 || true)
+                    if (fileTree.size() != 1)
                         dataSupplier.add(FileView.PARENT);
                     dataSupplier.addAll(FXCollections.observableArrayList(response.toFileViews()));
                 });
