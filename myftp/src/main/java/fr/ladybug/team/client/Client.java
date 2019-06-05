@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkState;
+
 /**
  *  Class responsible for running a client that can send the commands list and get to a server.
  *  The get command accepts the path to a file and sends the file's size and its content.
@@ -39,7 +41,7 @@ public class Client {
      * @param port the port to which the socket will be bound.
      * @throws IOException the exception is thrown when it is not possible to connect to the remote server.
      */
-    public Client(String remoteAddress, int port) throws IOException {
+    public Client(@NotNull String remoteAddress, int port) throws IOException {
         server = new Socket(remoteAddress, port);
 
         inputStream = server.getInputStream();
@@ -54,7 +56,7 @@ public class Client {
      * @param onLoad the callback to successfully loaded list of files.
      * @param onError the callback to failure.
      */
-    public void load(Consumer<List<FileView>> onLoad, Consumer<String> onError) {
+    public void load(@NotNull Consumer<List<FileView>> onLoad, @NotNull Consumer<String> onError) {
         var client = this;
         var task = new Task<Void>() {
             @Override
@@ -81,7 +83,7 @@ public class Client {
      * Constructs full path from root directory to current directory.
      * @return the full path from root directory to current directory
      */
-    private String getFullPath() {
+    private @NotNull String getFullPath() {
         return fileTree.stream().collect(Collectors.joining(FileSystems.getDefault().getSeparator()));
     }
 
@@ -89,25 +91,26 @@ public class Client {
      * Changes the remote filesystem's working directory by pushing given directory to the current file tree.
      * @param directory the directory to push to the current file tree.
      */
-    public void moveToDirectory(String directory) {
+    public void moveToDirectory(@NotNull String directory) {
         logger.info("Moved to directory " + directory);
         fileTree.add(directory);
     }
 
     /** Changes the remote filesystem's working directory by removing top directory from the current file tree. */
     public void moveToParentDirectory() {
+        checkState(fileTree.size() > 0);
         logger.info("Left current directory for parent");
         fileTree.pop();
     }
 
-    public byte[] makeQuery(Query query) throws IOException {
+    public @NotNull byte[] makeQuery(@NotNull Query query) throws IOException {
         logger.info("Message of the query executed: " + query.getQueryBody());
         logger.info("Task of the query executed: " + query.getQueryType());
         query.printToStream(outputStream);
         return readNextPackage(inputStream);
     }
 
-    private byte[] readNextPackage(InputStream inputStream) throws IOException {
+    private @NotNull byte[] readNextPackage(@NotNull InputStream inputStream) throws IOException {
         var dataInputStream = new DataInputStream(inputStream);
         int packageSize = dataInputStream.readInt();
         var bytes = dataInputStream.readNBytes(packageSize);
@@ -130,7 +133,7 @@ public class Client {
      * @param filename the filename of the file which is to be saved.
      * @param onFinishInformer the callback for save finish.
      */
-    public void saveFile(String filename, Consumer<String> onFinishInformer) {
+    public void saveFile(@NotNull String filename, @NotNull Consumer<String> onFinishInformer) {
         byte[] content;
         try {
             var response = ResponseGet.fromBytes(makeQuery(new Query(Query.QueryType.GET,
