@@ -1,16 +1,12 @@
 package fr.ladybug.team;
 
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.scene.control.Alert;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,9 +69,9 @@ public class Client {
     }
 
     private byte[] makeQuery(Query query) throws IOException {
-        logger.info("Message of the query executed: " + query.getMessage());
-        logger.info("Task of the query executed: " + query.getTaskName());
-        query.goTo(outputStream);
+        logger.info("Message of the query executed: " + query.getQueryBody());
+        logger.info("Task of the query executed: " + query.getQueryType());
+        query.printToStream(outputStream);
         return readNextPackage(inputStream);
     }
 

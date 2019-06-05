@@ -1,41 +1,48 @@
 package fr.ladybug.team;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+import java.util.logging.Logger;
 
+/** Representation of the query that the client sends to the server. */
 public class Query {
+    private @NotNull QueryType queryType;
+    private @NotNull String queryBody;
 
-    private QueryType taskName;
-    private String message;
-
-    public Query(QueryType taskName, String message) {
-        this.taskName = taskName;
-        this.message = message;
+    /** Constructor that creates Query with given type and text. */
+    public Query(@NotNull QueryType queryType, @NotNull String queryBody) {
+        this.queryType = queryType;
+        this.queryBody = queryBody;
     }
 
-    public QueryType getTaskName() {
-        return taskName;
+    /** Getter for queryType field. */
+    public @NotNull QueryType getQueryType() {
+        return queryType;
     }
 
-    public String getMessage() {
-        return message;
+    /** Getter for queryBody field. */
+    public @NotNull String getQueryBody() {
+        return queryBody;
     }
 
-    public void goTo(OutputStream outputStream) throws IOException {
+    /** Writes the query to the given OutputStream. */
+    public void printToStream(@NotNull OutputStream outputStream) throws IOException {
         int packageSize = 0;
 
         packageSize += Integer.BYTES;
-        var bytes = message.getBytes();
+        var bytes = queryBody.getBytes();
         packageSize += bytes.length;
 
         var stream = new DataOutputStream(outputStream);
         stream.writeInt(packageSize);
-        stream.writeInt(taskName.value());
+        stream.writeInt(queryType.value());
         stream.write(bytes, 0, bytes.length);
         stream.flush();
-        System.out.println("sent something");
+        Logger.getAnonymousLogger().info("Wrote query " + queryType + " " + queryBody);
     }
 
+    /** Enum that stores the types of possible queries for the client to make. */
     public enum QueryType {
         LIST(1),
         GET(2);

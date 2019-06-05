@@ -340,9 +340,9 @@ public class Server {
                 inputTransmission.finalizeRead();
                 int queryType = inputTransmission.queryTypeBuffer.getInt();
                 String query = new String(inputTransmission.receivedData.array());
-                if (queryType == 2) {
+                if (queryType == Query.QueryType.GET.value()) {
                     threadPool.submit(() -> executeGet(this, query));
-                } else if (queryType == 1) {
+                } else if (queryType == Query.QueryType.LIST.value()) {
                     threadPool.submit(() -> executeList(this, query));
                 } else {
                     logger.severe("Invalid query type: " + queryType);
