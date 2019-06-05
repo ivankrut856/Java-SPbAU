@@ -28,7 +28,7 @@ public class ResponseGet {
             if (responseGet.fileSize < -1) {
                 return errorResponse("Query execution failed.");
             } else if (responseGet.fileSize == -1) {
-                return errorResponse("Directory does not exist.");
+                return errorResponse("File does not exist.");
             }
             responseGet.fileContent = stream.readNBytes(responseGet.fileSize);
             return responseGet;
