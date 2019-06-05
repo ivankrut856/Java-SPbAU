@@ -13,22 +13,19 @@ import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.net.*;
 import java.util.List;
-import java.util.Scanner;
 import java.util.logging.Logger;
 
+/**
+ * Application that allows client to connect to a remote server and interact with its files.
+ * It allows to view subdirectories of the directory the server is started in, move in them and download files.
+ */
 public class ClientInterface extends Application {
     private static final int BASE_SCREEN_WIDTH = 300;
     private static final int BASE_SCREEN_HEIGHT = 600;
     private static final int MIN_SCREEN_HEIGHT = 200;
     private static final int MIN_SCREEN_WIDTH = 100;
-
-    private static Scanner scanner = new Scanner(System.in);
-
-    private static Socket server;
-    private static OutputStream outputStream;
-    private static InputStream inputStream;
+    private static final int DOUBLE_CLICK = 2;
 
     private @NotNull static final Logger logger = Logger.getAnonymousLogger();
 
@@ -38,14 +35,13 @@ public class ClientInterface extends Application {
     /** {@inheritDoc} */
     @Override
     public void start(Stage primaryStage) throws Exception {
-        logger.info("starting");
+        logger.info("Starting the application.");
         TextInputDialog remoteAddressSupplier = new TextInputDialog("ip.ad.dr.re:port");
         remoteAddressSupplier.setTitle("MyFTP");
         remoteAddressSupplier.setHeaderText("Welcome to MyFTP");
         remoteAddressSupplier.setContentText("Please enter server's remote address");
 
-        Client tmpClient = null;
-
+        Client getClient;
         while (true) {
             var result = remoteAddressSupplier.showAndWait();
 
@@ -58,13 +54,11 @@ public class ClientInterface extends Application {
             try {
                 if (userInput.length == 2) {
                     int port = Integer.parseInt(userInput[1]);
-                    tmpClient = new Client(userInput[0], port);
+                    getClient = new Client(userInput[0], port);
                     break;
                 }
-            }
-            catch (NumberFormatException ignore) {
-            }
-            catch (IOException e) {
+            } catch (NumberFormatException ignore) { // will show "incorrect" alert.
+            } catch (IOException e) {
                 var alert = new Alert(Alert.AlertType.WARNING);
                 alert.setTitle("Network");
                 alert.setHeaderText("Incorrect host");
@@ -79,33 +73,31 @@ public class ClientInterface extends Application {
             alert.showAndWait();
         }
 
-        client = tmpClient;
+        client = getClient;
         dataSupplier = FXCollections.observableArrayList();
 
         loadCurrentFolder();
-
-        logger.info("initial load");
-
+        logger.info("Initial load successful.");
         var listView = new ListView<>(dataSupplier);
         listView.setOnMouseClicked(event -> {
-            if (event.getClickCount() >= 2) {
+            if (event.getClickCount() >= DOUBLE_CLICK) {
                 int selectedIndex = listView.getSelectionModel().getSelectedIndex();
                 if (selectedIndex == -1) {
                     return;
                 }
                 var currentView = listView.getItems().get(selectedIndex);
                 if (currentView.isDirectory()) {
-                    if (currentView == FileView.PARENT)
-                        client.popDir();
-                    else {
-                        client.pushDirectory(currentView.getFileName());
+                    if (currentView == FileView.PARENT) {
+                        client.moveToParentDirectory();
+                    } else {
+                        client.moveToDirectory(currentView.getFileName());
                     }
                     loadCurrentFolder();
                 }
                 else {
-                    if (currentView == FileView.LOADING)
+                    if (currentView == FileView.LOADING) {
                         return;
-
+                    }
                     client.saveFile(currentView.getFileName(), (message) -> {
                         var alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("File download");
@@ -138,6 +130,7 @@ public class ClientInterface extends Application {
             alert.setTitle("Connection");
             alert.setHeaderText("Status");
             alert.setContentText("Connection lost");
+            alert.show();
             Platform.exit();
         });
     }

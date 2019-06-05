@@ -28,13 +28,16 @@ public class Client {
     private @NotNull Stack<String> fileTree;
     private @NotNull static final Logger logger = Logger.getAnonymousLogger();
 
+    /** Client should not be able to walk any lower than the base directory for security reasons. */
+    private static final String baseDirectory = ".";
+
     /**
      * Basic constructor for a client.
-     * Performs binding a socket to a remote server with given remote address and port
-     * Initialises basic state of the remote filesystem
-     * @param remoteAddress the remote address of the target server
-     * @param port the port to which the socket will be binded
-     * @throws IOException the exception is thrown when it is not possible to connect to the remote server
+     * Performs binding a socket to a remote server with given remote address and port.
+     * Initializes basic state of the remote filesystem.
+     * @param remoteAddress the remote address of the target server.
+     * @param port the port to which the socket will be bound.
+     * @throws IOException the exception is thrown when it is not possible to connect to the remote server.
      */
     public Client(String remoteAddress, int port) throws IOException {
         server = new Socket(remoteAddress, port);
@@ -43,13 +46,13 @@ public class Client {
         outputStream = server.getOutputStream();
 
         fileTree = new Stack<>();
-        fileTree.add(".");
+        fileTree.add(baseDirectory);
     }
 
     /**
-     * Loads a list of files in the current directory
-     * @param onLoad the callback to successfully loaded list of files
-     * @param onError the callback to failure
+     * Loads a list of files in the current directory.
+     * @param onLoad the callback to successfully loaded list of files.
+     * @param onError the callback to failure.
      */
     public void load(Consumer<List<FileView>> onLoad, Consumer<String> onError) {
         var client = this;
@@ -75,22 +78,25 @@ public class Client {
     }
 
     /**
-     * Constructs full path from root directory to current directory
+     * Constructs full path from root directory to current directory.
      * @return the full path from root directory to current directory
      */
-    public String getFullPath() {
+    private String getFullPath() {
         return fileTree.stream().collect(Collectors.joining(FileSystems.getDefault().getSeparator()));
     }
 
-    /** Changes the remote filesystem's working directory by pushing given directory to the current file tree
-     * @param directory the directory to push to the current filetree
+    /**
+     * Changes the remote filesystem's working directory by pushing given directory to the current file tree.
+     * @param directory the directory to push to the current file tree.
      */
-    public void pushDirectory(String directory) {
+    public void moveToDirectory(String directory) {
+        logger.info("Moved to directory " + directory);
         fileTree.add(directory);
     }
 
-    /** Changes the remote filesystem's working directory by removing top directory from the current file tree */
-    public void popDir() {
+    /** Changes the remote filesystem's working directory by removing top directory from the current file tree. */
+    public void moveToParentDirectory() {
+        logger.info("Left current directory for parent");
         fileTree.pop();
     }
 
@@ -102,17 +108,17 @@ public class Client {
     }
 
     private byte[] readNextPackage(InputStream inputStream) throws IOException {
-        DataInputStream dataInputStream = new DataInputStream(inputStream);
+        var dataInputStream = new DataInputStream(inputStream);
         int packageSize = dataInputStream.readInt();
         var bytes = dataInputStream.readNBytes(packageSize);
 
-        if (bytes.length != packageSize)
-            throw new IOException("Package's been fucked up");
-
+        if (bytes.length != packageSize) {
+            throw new IOException("Package has been damaged.");
+        }
         return bytes;
     }
 
-    /** Shuts down the client */
+    /** Shuts down the client. */
     public void shutdown() throws IOException {
         if (server.isClosed())
             throw new IllegalStateException("The client is already shut down.");
@@ -120,28 +126,33 @@ public class Client {
     }
 
     /**
-     * Saves the file with given filename in current working directory into current working folder in local machine
-     * @param filename the filename of the file which is to be saved
-     * @param onFinishInformer the callback for save finish
+     * Saves the file with given filename in current working directory into current working folder in local machine.
+     * @param filename the filename of the file which is to be saved.
+     * @param onFinishInformer the callback for save finish.
      */
     public void saveFile(String filename, Consumer<String> onFinishInformer) {
-        byte[] content = null;
+        byte[] content;
         try {
-            var response = ResponseGet.fromBytes(makeQuery(new Query(Query.QueryType.GET, getFullPath() + FileSystems.getDefault().getSeparator() + filename)));
+            var response = ResponseGet.fromBytes(makeQuery(new Query(Query.QueryType.GET,
+                    getFullPath() + FileSystems.getDefault().getSeparator() + filename)));
             if (!response.isValid()) {
-                System.err.println(response.getError());
+                logger.severe("Query failed: " + response.getError());
+                onFinishInformer.accept("Query failed.");
+                return;
             }
             content = response.getFileContent();
 
-        } catch (IOException ignore) {
-            onFinishInformer.accept("Can not download file");
+        } catch (IOException e) {
+            logger.severe("Downloading file failed: " + e.getMessage());
+            onFinishInformer.accept("Could not download the file.");
             return;
         }
 
         try {
             FileUtils.copyToFile(new ByteArrayInputStream(content), new File(filename));
         } catch (IOException e) {
-            onFinishInformer.accept("Can not save the file. Check your privilege");
+            logger.severe("Saving file failed: " + e.getMessage());
+            onFinishInformer.accept("Could not save the file.");
             return;
         }
 
