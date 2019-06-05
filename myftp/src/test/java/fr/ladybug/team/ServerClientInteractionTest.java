@@ -30,6 +30,13 @@ class ServerClientInteractionTest {
         var result = ResponseGet.fromBytes(query);
         assertTrue(result.isValid());
         assertEquals("File content", new String(result.getFileContent()));
+        client.shutdown();
+
+        var secondClient = new Client(ADDRESS, PORT);
+        var secondQuery = secondClient.makeQuery(new Query(Query.QueryType.GET, "src/test/resources/dir/file"));
+        var secondResult = ResponseGet.fromBytes(secondQuery);
+        assertTrue(secondResult.isValid());
+        assertEquals("This is a file", new String(secondResult.getFileContent()));
     }
 
     @Test
@@ -70,10 +77,15 @@ class ServerClientInteractionTest {
         assertFalse(firstResult.isValid());
         assertEquals("Directory does not exist.", firstResult.getError());
 
-        var secondQuery = client.makeQuery(new Query(Query.QueryType.GET, "src/test/resources/dir/file"));
+        var secondQuery = client.makeQuery(new Query(Query.QueryType.GET, "src/not/a/directory/not/even/close"));
         var secondResult = ResponseGet.fromBytes(secondQuery);
-        assertTrue(secondResult.isValid());
-        assertEquals("This is a file", new String(secondResult.getFileContent()));
+        assertFalse(secondResult.isValid());
+        assertEquals("Directory does not exist.", secondResult.getError());
+
+        var thirdQuery = client.makeQuery(new Query(Query.QueryType.LIST, "src/test/resources/file"));
+        var thirdResult = ResponseList.fromBytes(thirdQuery);
+        assertFalse(thirdResult.isValid());
+        assertEquals("Directory does not exist.", thirdResult.getError());
     }
 
     @Test
