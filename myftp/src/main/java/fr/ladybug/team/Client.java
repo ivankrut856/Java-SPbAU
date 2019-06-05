@@ -24,8 +24,8 @@ public class Client {
 
     private @NotNull static final Logger logger = Logger.getAnonymousLogger();
 
-    public Client(String remoteAddress) throws IOException {
-        server = new Socket(remoteAddress, 8179);
+    public Client(String remoteAddress, int port) throws IOException {
+        server = new Socket(remoteAddress, port);
 
         inputStream = server.getInputStream();
         outputStream = server.getOutputStream();

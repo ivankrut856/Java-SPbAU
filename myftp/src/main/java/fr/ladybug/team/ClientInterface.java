@@ -60,8 +60,9 @@ public class ClientInterface extends Application {
                 return;
             }
 
-            if (true /*TODO check the string*/) {
-                tmpClient = new Client(result.get());
+            String[] userInput = result.get().split(":", 2);
+            if (userInput.length == 2) {
+                tmpClient = new Client(userInput[0], Integer.parseInt(userInput[1]));
                 break;
             }
         }
