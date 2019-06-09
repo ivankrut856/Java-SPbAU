@@ -157,9 +157,7 @@ public class Server {
     /** Algorithm for the thread that accepts connections. */
     private void accept() throws IOException {
         while (isRunning) {
-            if (acceptSelector.select() == 0) {
-                continue;
-            }
+            acceptSelector.select();
             var iterator = acceptSelector.selectedKeys().iterator();
             while (iterator.hasNext()) {
                 SelectionKey key = iterator.next();
@@ -181,9 +179,7 @@ public class Server {
     /** Process for the thread that reads from clients' connections. */
     private void read() throws IOException {
         while (isRunning) {
-            if (readSelector.select() == 0) {
-                continue;
-            }
+            readSelector.select();
             var iterator = readSelector.selectedKeys().iterator();
             while (iterator.hasNext()) {
                 SelectionKey key = iterator.next();
@@ -205,9 +201,7 @@ public class Server {
     private void write() throws IOException {
         while (isRunning) {
             writeSelector.selectedKeys().clear();
-            if (writeSelector.select() == 0) {
-                continue;
-            }
+            writeSelector.select();
             var iterator = writeSelector.selectedKeys().iterator();
             while (iterator.hasNext()) {
                 SelectionKey key = iterator.next();
