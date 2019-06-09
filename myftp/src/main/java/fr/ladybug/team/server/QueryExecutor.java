@@ -48,6 +48,8 @@ class QueryExecutor {
             }
         } catch (IOException e) {
             logger.severe("Failed to read file " + pathName);
+            controller.addFailedQuery();
+            return;
         }
         var lengthBytes = Ints.toByteArray(fileBytes.length);
         logger.info("Successfully read file, size is " + fileBytes.length);
