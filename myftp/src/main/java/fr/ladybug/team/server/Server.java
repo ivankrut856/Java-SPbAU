@@ -1,25 +1,15 @@
 package fr.ladybug.team.server;
 
-import com.google.common.primitives.Ints;
-import fr.ladybug.team.client.Query;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.lang.Integer.max;
 
 /**
  * Class responsible for running a server that can execute the commands list and get.
@@ -35,7 +25,7 @@ public class Server {
     private final @NotNull Thread acceptingThread;
     private final @NotNull Thread readingThread;
     private final @NotNull Thread writingThread;
-    private volatile boolean wasShutdown = false;
+    private volatile boolean isRunning = false;
 
     private final static int NUMBER_OF_THREADS = 5;
     private final @NotNull ExecutorService threadPool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
@@ -61,6 +51,7 @@ public class Server {
         Server server;
         try {
             server = new Server(address, portNumber);
+            server.start();
         } catch (IOException e) {
             logger.severe("Failed to start server: " + e.getMessage());
             return;
@@ -86,7 +77,7 @@ public class Server {
     }
 
     /**
-     * Creates and starts a server with the given address on the given port number.
+     * Creates a server with the given address on the given port number.
      * @param address    the address for the server.
      * @param portNumber the port number for the server.
      * @throws IOException if server could not be created.
@@ -102,7 +93,7 @@ public class Server {
         var listenAddress = new InetSocketAddress(address, portNumber);
         serverSocketChannel.socket().bind(listenAddress);
         serverSocketChannel.register(acceptSelector, SelectionKey.OP_ACCEPT);
-        logger.info("Server started on port " + portNumber + ".");
+        logger.info("Server set up on port " + portNumber + ".");
 
         acceptingThread = new Thread(() -> {
             try {
@@ -125,10 +116,6 @@ public class Server {
                 logger.severe("IOException while processing write connection: " + e.getMessage());
             }
         });
-
-        initializeThread(acceptingThread);
-        initializeThread(readingThread);
-        initializeThread(writingThread);
     }
 
     /** Starts the given process as a daemon. */
@@ -138,23 +125,38 @@ public class Server {
     }
 
     /**
+     * Starts the server.
+     * @throws IllegalStateException if server has already been started.
+     */
+    public void start() {
+        checkState(!isRunning, "Server was already started");
+        logger.info("Server started.");
+        isRunning = true;
+        initializeThread(acceptingThread);
+        initializeThread(readingThread);
+        initializeThread(writingThread);
+    }
+
+    /**
      * Shuts down the server by interrupting all threads it is running and joining them.
      * @throws InterruptedException if joining threads was interrupted.
      */
     public void shutdown() throws InterruptedException {
-        wasShutdown = true;
-        threadPool.shutdown();
-        acceptingThread.interrupt();
-        readingThread.interrupt();
-        writingThread.interrupt();
-        acceptingThread.join();
-        readingThread.join();
-        writingThread.join();
+        if (isRunning) {
+            isRunning = false;
+            threadPool.shutdown();
+            acceptingThread.interrupt();
+            readingThread.interrupt();
+            writingThread.interrupt();
+            acceptingThread.join();
+            readingThread.join();
+            writingThread.join();
+        }
     }
 
     /** Algorithm for the thread that accepts connections. */
     private void accept() throws IOException {
-        while (!wasShutdown) {
+        while (isRunning) {
             if (acceptSelector.select() == 0) {
                 continue;
             }
@@ -178,7 +180,7 @@ public class Server {
 
     /** Process for the thread that reads from clients' connections. */
     private void read() throws IOException {
-        while (!wasShutdown) {
+        while (isRunning) {
             if (readSelector.select() == 0) {
                 continue;
             }
@@ -201,7 +203,7 @@ public class Server {
 
     /** Process for the thread that writes to clients' connections. */
     private void write() throws IOException {
-        while (!wasShutdown) {
+        while (isRunning) {
             writeSelector.selectedKeys().clear();
             if (writeSelector.select() == 0) {
                 continue;
