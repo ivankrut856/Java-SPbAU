@@ -5,16 +5,19 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /** Class responsible for executing the queries sent to the server and submitting their result to a TransmissionController. */
 class QueryExecutor {
     private @NotNull static final Logger logger = Logger.getAnonymousLogger();
+    private static final int BUFFER_SIZE = 4096;
 
     /**
      * Method that executes a get query and sends the result to the given transmission controller.
@@ -37,8 +40,12 @@ class QueryExecutor {
             return;
         }
         var fileBytes = new byte[0];
-        try {
-            fileBytes = Files.readAllBytes(path);
+        try (var fileInputStream = new FileInputStream(path.toFile())) {
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int readLength;
+            while ((readLength = fileInputStream.read(buffer)) != -1) {
+                fileBytes = ArrayUtils.addAll(fileBytes, Arrays.copyOf(buffer, readLength));
+            }
         } catch (IOException e) {
             logger.severe("Failed to read file " + pathName);
         }
