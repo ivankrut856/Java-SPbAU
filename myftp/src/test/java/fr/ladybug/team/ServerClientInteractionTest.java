@@ -15,13 +15,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ServerClientInteractionTest {
     private static final int PORT = 8179;
-    private static final String ADDRESS = "localhost";
+    private static final String ADDRESS = "127.0.0.1";
     private static Server server;
 
     @BeforeAll
     static void setUp() throws IOException {
         server = new Server(ADDRESS, PORT);
-        server.start();
     }
 
     @Test

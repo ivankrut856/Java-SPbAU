@@ -30,20 +30,24 @@ public class Server {
     private final static int NUMBER_OF_THREADS = 5;
     private final @NotNull ExecutorService threadPool = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
     private @NotNull static final Logger logger = Logger.getAnonymousLogger();
+    /** The default address for this server. */
+    private @NotNull static final String DEFAULT_ADDRESS = "127.0.0.1";
 
     /**
      * Runs a server on the given address with the given port number.
      * @param args two arguments: the address and the port number.
      */
     public static void main(String[] args) {
-        if (args.length != 2) {
-            System.out.println("Require 2 arguments: the address and port number");
+        if (args.length < 1 || args.length > 2) {
+            System.out.println("Require arguments to start server:");
+            System.out.println("either <address> <port number>");
+            System.out.println("or <port number>, and the server will start on the default address");
             return;
         }
-        String address = args[0];
+        String address = (args.length == 2) ? args[0] : DEFAULT_ADDRESS;
         int portNumber;
         try {
-            portNumber = Integer.parseInt(args[1]);
+            portNumber = Integer.parseInt(args[args.length - 1]);
         } catch (NumberFormatException e) {
             System.out.println("Port number should be a number.");
             return;
@@ -116,6 +120,15 @@ public class Server {
                 logger.severe("IOException while processing write connection: " + e.getMessage());
             }
         });
+    }
+
+    /**
+     * Creates a server with the default address on the given port number.
+     * @param portNumber the port number for the server.
+     * @throws IOException if server could not be created.
+     */
+    public Server(int portNumber) throws IOException {
+        this(DEFAULT_ADDRESS, portNumber);
     }
 
     /** Starts the given process as a daemon. */
