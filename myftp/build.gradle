@@ -1,19 +1,12 @@
-
 plugins {
     id 'java'
     id 'application'
     id 'org.openjfx.javafxplugin' version '0.0.7'
 }
 
-group 'ladybugTeam'
-version '1.0-SNAPSHOT'
-
-sourceCompatibility = 11
-
 repositories {
     mavenCentral()
 }
-
 dependencies {
     testCompile('org.junit.jupiter:junit-jupiter-api:5.3.2')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.3.2')
@@ -23,31 +16,62 @@ dependencies {
     implementation group: 'commons-io', name: 'commons-io', version: '2.6'
 }
 
-test {
-    useJUnitPlatform()
-    testLogging {
-        events 'PASSED', 'FAILED', 'SKIPPED'
-    }
-}
 
-task client(type:CreateStartScripts) {
-    applicationName = 'client'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClassName = 'fr.ladybug.team.client.ClientInterface'
-    outputDir = file('build/bin')
-}
-
-task server(type:CreateStartScripts) {
-    applicationName = 'server'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClassName = 'fr.ladybug.team.server.Server'
-    outputDir = file('build/bin')
-}
-
-mainClassName = 'fr.ladybug.team.client.ClientInterface'
+group 'ladybugTeam'
+version '1.0-SNAPSHOT'
 
 javafx {
     version = "12"
     modules = [ 'javafx.controls' ]
 }
 
+sourceCompatibility = 11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile(
+            'org.junit.jupiter:junit-jupiter-api:5.1.0',
+    )
+    testRuntime(
+            'org.junit.jupiter:junit-jupiter-engine:5.1.0',
+            'org.junit.platform:junit-platform-launcher:1.1.0',
+            'org.junit.platform:junit-platform-runner:1.1.0'
+    )
+    compile(
+            'org.jetbrains:annotations:15.0'
+    )
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task clientJar(dependsOn: classes, type: Jar) {
+    archiveBaseName = "ClientInterface"
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+
+    manifest {
+        attributes("Main-Class": "fr.ladybug.team.client.ClientInterface")
+    }
+}
+
+task serverJar(dependsOn: classes, type: Jar) {
+    archiveBaseName = "Server"
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+
+    manifest {
+        attributes("Main-Class": "fr.ladybug.team.server.Server")
+    }
+}
+
+mainClassName = "fr.ladybug.team.client.ClientInterface"
+
+build {
+    dependsOn clientJar
+    dependsOn serverJar
+}
