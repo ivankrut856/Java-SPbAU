@@ -21,6 +21,7 @@ class ServerClientInteractionTest {
     @BeforeAll
     static void setUp() throws IOException {
         server = new Server(ADDRESS, PORT);
+        server.start();
     }
 
     @Test
