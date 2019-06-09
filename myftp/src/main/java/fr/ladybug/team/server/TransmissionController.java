@@ -151,9 +151,16 @@ class TransmissionController {
 
         private void readCorrectly(ByteBuffer[] byteBuffers) {
             try {
-                if (channel.read(byteBuffers) == -1) {
-                    logger.info("Closed channel " + channel.getLocalAddress());
-                    channel.close(); //closes channel elegantly if disconnect happened.
+                while (true) {
+                    long bytesRead = channel.read(byteBuffers);
+                    if (bytesRead == 0)
+                        break;
+                    if (bytesRead == -1) {
+                        logger.info("Closed channel " + channel.getLocalAddress());
+                        channel.close(); //closes channel elegantly if disconnect happened.
+                        break;
+                    }
+
                 }
             } catch (IOException e) {
                 logger.severe("Failed read from channel: " + e.getMessage());
