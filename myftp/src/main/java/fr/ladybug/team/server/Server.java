@@ -164,7 +164,8 @@ public class Server {
                 if (key.isAcceptable()) {
                     var socketChannel = ((ServerSocketChannel) key.channel()).accept();
                     socketChannel.configureBlocking(false);
-                    socketChannel.register(readSelector, SelectionKey.OP_READ, new TransmissionController(socketChannel));
+                    socketChannel.register(readSelector, SelectionKey.OP_READ,
+                            new TransmissionController(socketChannel, writeSelector, threadPool));
                     readSelector.wakeup();
                     logger.info("Connection Accepted: " + socketChannel.getLocalAddress());
                 } else {
@@ -189,7 +190,6 @@ public class Server {
                     continue;
                 } else if (key.isReadable()) {
                     var controller = (TransmissionController) key.attachment();
-                    logger.info("Trying to read from " + controller.channel.getLocalAddress());
                     controller.processRead();
                 } else {
                     logger.severe("Error: key not supported by server.");
@@ -214,259 +214,11 @@ public class Server {
                     continue;
                 } else if (key.isWritable()) {
                     var controller = (TransmissionController) key.attachment();
-                    logger.info("Trying to write to " + controller.channel.getLocalAddress());
                     controller.processWrite(key);
                 } else {
                     logger.severe("Error: key not supported by server.");
                 }
                 iterator.remove();
-            }
-        }
-    }
-
-    /**
-     * Method that executes a get query and sends the result to the given transmission controller.
-     * @param controller the controller to send the response to.
-     * @param pathName   the path of the file for which the get query should be executed.
-     */
-    private void executeGet(@NotNull TransmissionController controller, @NotNull String pathName) {
-        logger.info("Executing get for " + pathName);
-        Path path;
-        try {
-            path = Paths.get(pathName);
-        } catch (InvalidPathException notAFile) {
-            logger.info("File " + pathName + " does not exist.");
-            controller.addQueryForIncorrectFile();
-            return;
-        }
-        if (!Files.isRegularFile(path)) {
-            logger.info("File " + pathName + " does not exist.");
-            controller.addQueryForIncorrectFile();
-            return;
-        }
-        var fileBytes = new byte[0];
-        try {
-            fileBytes = Files.readAllBytes(path);
-        } catch (IOException e) {
-            logger.severe("Failed to read file " + pathName);
-        }
-        var lengthBytes = Ints.toByteArray(fileBytes.length);
-        logger.info("Successfully read file, size is " + fileBytes.length);
-        controller.addOutputQuery(ArrayUtils.addAll(lengthBytes, fileBytes));
-    }
-
-    /**
-     * Method that executes a list query and sends the result to the given transmission controller.
-     * @param controller the controller to send the response to.
-     * @param pathName   the path of the file for which the list query should be executed.
-     */
-    private void executeList(@NotNull TransmissionController controller, @NotNull String pathName) {
-        logger.info("Executing list for " + pathName);
-        Path path;
-        try {
-            path = Paths.get(pathName);
-        } catch (InvalidPathException notADirectory) {
-            logger.info("Directory " + pathName + " does not exist.");
-            controller.addQueryForIncorrectFile();
-            return;
-        }
-        if (!Files.isDirectory(path)) {
-            logger.info("File " + pathName + " does not exist or is not a directory.");
-            controller.addQueryForIncorrectFile();
-            return;
-        }
-        var fileList = path.toFile().listFiles();
-        if (fileList == null) {
-            logger.severe("Could not get list of files in directory.");
-            controller.addFailedQuery();
-        } else {
-            int size = fileList.length;
-            logger.info("Successfully listed files in directory, found " + size + " files.");
-            var result = Ints.toByteArray(size);
-            for (var file : fileList) {
-                result = ArrayUtils.addAll(result, fileToBytes(file));
-            }
-            controller.addOutputQuery(result);
-        }
-    }
-
-    /**
-     * Method that converts information about a file into a byte array according to the server's protocol.
-     * The byte array consists of an integer (the file name's size in bytes), the file name,
-     * and a boolean (is the file a directory), concatenated.
-     * @param file the file to serialize.
-     * @return a byte array with the information about the given file.
-     */
-    private @NotNull byte[] fileToBytes(@NotNull File file) {
-        String fileName = file.getName();
-        var isDirectory = new byte[]{(byte) (file.isDirectory() ? 1 : 0)};
-        var encodedFile = fileName.getBytes();
-        return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(encodedFile.length), encodedFile), isDirectory);
-    }
-
-    /** Class responsible for all transmissions between the server and the clients' SocketChannels. */
-    private class TransmissionController {
-        private @NotNull SocketChannel channel;
-        private @NotNull InputTransmission inputTransmission = new InputTransmission();
-        private @NotNull OutputTransmission outputTransmission = new OutputTransmission();
-
-        private TransmissionController(@NotNull SocketChannel channel) {
-            this.channel = channel;
-        }
-
-        /**
-         * Sets the query for the outputTransmission in accordance with the server's protocol.
-         * The transmission consists of the length of the data followed by the data itself.
-         * @param data a byte array that should be transmitted.
-         */
-        private void addOutputQuery(@NotNull byte[] data) {
-            try {
-                channel.register(writeSelector, SelectionKey.OP_WRITE, this);
-                writeSelector.wakeup();
-            } catch (ClosedChannelException e) {
-                logger.info("The client has disconnected.");
-                return;
-            }
-            outputTransmission.sendData(ByteBuffer.wrap(ArrayUtils.addAll(Ints.toByteArray(data.length), data)));
-        }
-
-        /** Adds an output query for a method called on an incorrect file. */
-        private void addQueryForIncorrectFile() {
-            addOutputQuery(Ints.toByteArray(-1));
-        }
-
-        /** Adds an output query for a failed method called on an incorrect file. */
-        private void addFailedQuery() {
-            addOutputQuery(Ints.toByteArray(-2));
-        }
-
-        /** Method that should be called when the channel is ready to be read from. */
-        private void processRead() {
-            if (!inputTransmission.hasReadSize()) { // read size of next package
-                inputTransmission.readSize();
-            } else if (!inputTransmission.hasReadData()) { // read the package data
-                inputTransmission.readData();
-            }
-
-            if (inputTransmission.hasReadData()) {
-                logger.info("Read package with size " + inputTransmission.packageSize);
-                if (!inputTransmission.isSizeCorrect()) {
-                    logger.severe("Invalid package size: " + inputTransmission.packageSize);
-                    addFailedQuery();
-                    inputTransmission.reset();
-                    return;
-                }
-                inputTransmission.finalizeRead();
-                int queryType = inputTransmission.queryTypeBuffer.getInt();
-                String query = new String(inputTransmission.receivedData.array());
-                if (queryType == Query.QueryType.GET.value()) {
-                    threadPool.submit(() -> executeGet(this, query));
-                } else if (queryType == Query.QueryType.LIST.value()) {
-                    threadPool.submit(() -> executeList(this, query));
-                } else {
-                    logger.severe("Invalid query type: " + queryType);
-                    this.addFailedQuery();
-                }
-                logger.info("Submitted a query for " + query);
-                inputTransmission.reset();
-            }
-        }
-
-        /** Method that should be called when the channel is ready to be written to. */
-        private void processWrite(@NotNull SelectionKey key) {
-            if (outputTransmission.shouldSendData() && outputTransmission.hasSentData()) {
-                logger.info("Sent response.");
-                outputTransmission.finalizeWrite();
-                key.cancel();
-            } else if (outputTransmission.packageToSend != null) {
-                outputTransmission.writeData();
-            }
-        }
-
-        /** Class that controls the server's interaction with incoming data from clients' channel. */
-        private class InputTransmission {
-            private final int defaultPackageSize = -5;
-            private @NotNull ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
-            private @NotNull ByteBuffer queryTypeBuffer = ByteBuffer.allocate(Integer.BYTES);
-            private @NotNull ByteBuffer receivedData = ByteBuffer.allocate(0);
-            private int packageSize = defaultPackageSize;
-
-            private boolean hasReadSize() {
-                return packageSize != defaultPackageSize;
-            }
-
-            private boolean hasReadData() {
-                return hasReadSize() && !receivedData.hasRemaining();
-            }
-
-            private void readSize() {
-                readCorrectly(new ByteBuffer[]{packageSizeBuffer});
-                if (!packageSizeBuffer.hasRemaining()) {
-                    packageSizeBuffer.flip();
-                    packageSize = packageSizeBuffer.getInt();
-                    receivedData = ByteBuffer.allocate(max(0, packageSize - Integer.BYTES));
-                }
-            }
-
-            private boolean isSizeCorrect() {
-                return inputTransmission.packageSize > Integer.BYTES; // all packages have at least an int
-            }
-
-            private void readData() {
-                readCorrectly(new ByteBuffer[]{queryTypeBuffer, receivedData});
-            }
-
-            private void readCorrectly(ByteBuffer[] byteBuffers) {
-                try {
-                    if (channel.read(byteBuffers) == -1) {
-                        logger.info("Closed channel " + channel.getLocalAddress());
-                        channel.close(); //closes channel elegantly if disconnect happened.
-                    }
-                } catch (IOException e) {
-                    logger.severe("Failed read from channel: " + e.getMessage());
-                }
-            }
-
-            private void finalizeRead() {
-                receivedData.flip();
-                queryTypeBuffer.flip();
-            }
-
-            private void reset() {
-                packageSizeBuffer.clear();
-                queryTypeBuffer.clear();
-                packageSize = defaultPackageSize;
-            }
-        }
-
-        /** Class that controls the server's interaction with the outgoing data to clients' channel. */
-        private class OutputTransmission {
-            private @Nullable ByteBuffer packageToSend;
-
-            private void sendData(@NotNull ByteBuffer packageToSend) {
-                checkState(this.packageToSend == null); // transmissions should come by one as clients are blocking.
-                this.packageToSend = packageToSend;
-            }
-
-            private boolean shouldSendData() {
-                return packageToSend != null;
-            }
-
-            private boolean hasSentData() {
-                return packageToSend != null && !packageToSend.hasRemaining();
-            }
-
-            private void writeData() {
-                checkState(packageToSend != null);
-                try {
-                    channel.write(packageToSend);
-                } catch (IOException e) {
-                    logger.severe("Writing to channel failed:" + e.getMessage());
-                }
-            }
-
-            private void finalizeWrite() {
-                packageToSend = null;
             }
         }
     }
