@@ -4,8 +4,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Method;
 
+/** Annotation requests Tester to run the method and provide test results */
 @Target(value= ElementType.METHOD)
 @Retention(value= RetentionPolicy.RUNTIME)
 public @interface Test {

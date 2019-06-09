@@ -2,9 +2,6 @@ package fr.ladybug.team;
 
 import fr.ladybug.team.testdata.*;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.ThrowingSupplier;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

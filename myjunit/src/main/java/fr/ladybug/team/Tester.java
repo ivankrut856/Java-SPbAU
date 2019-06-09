@@ -23,7 +23,7 @@ public class Tester {
 
     private Object testClassInstance;
 
-    private void Tester() {
+    private Tester() {
     }
 
     /** Factory constructs an instance of Tester from Class instance
@@ -101,7 +101,7 @@ public class Tester {
             try {
                 method.invoke(testClassInstance);
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("@BeforeClass invocation error. Shouldn't normally happen");
+                System.err.println(String.format("Skipped @BeforeClass %s invocation due to the internal error: %s", method.getName(), e.getMessage()));
             }
             catch (InvocationTargetException e) {
                 var testException = new TestException("An exception occurred in @BeforeClass method");
@@ -123,7 +123,7 @@ public class Tester {
                 try {
                     beforeMethod.invoke(testClassInstance);
                 } catch (IllegalAccessException e) {
-                    throw new RuntimeException("@Before invocation error. Shouldn't normally happen");
+                    System.err.println(String.format("Skipped @Before %s invocation due to the internal error: %s", beforeMethod.getName(), e.getMessage()));
                 }
                 catch (InvocationTargetException e) {
                     var testException = new TestException("An exception occurred in @Before method");
@@ -141,7 +141,8 @@ public class Tester {
                 elapsedTime = System.nanoTime() - startTime;
             }
             catch (IllegalAccessException e) {
-                throw new RuntimeException("@Test invocation error. Shouldn't normally happen");
+                System.err.println(String.format("Skipped @Test %s invocation due to the internal error: %s", method.getName(), e.getMessage()));
+                thrown = true;
             }
             catch (InvocationTargetException e) {
                 thrown = true;
@@ -165,7 +166,7 @@ public class Tester {
                 try {
                     afterMethod.invoke(testClassInstance);
                 } catch (IllegalAccessException e) {
-                    throw new RuntimeException("@After invocation error. Shouldn't normally happen");
+                    System.err.println(String.format("Skipped @After %s invocation due to the internal error: %s", afterMethod.getName(), e.getMessage()));
                 }
                 catch (InvocationTargetException e) {
                     var testException = new TestException("An exception occurred in @After method");
@@ -180,7 +181,7 @@ public class Tester {
             try {
                 method.invoke(testClassInstance);
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("@AfterClass invocation error. Shouldn't normally happen");
+                System.err.println(String.format("Skipped @AfterClass %s invocation due to the internal error: %s", method.getName(), e.getMessage()));
             }
             catch (InvocationTargetException e) {
                 var testException = new TestException("An exception occurred in @AfterClass method");
