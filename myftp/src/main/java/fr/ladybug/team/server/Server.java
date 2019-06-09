@@ -22,10 +22,10 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.lang.Integer.max;
 
 /**
- *  Class responsible for running a server that can execute the commands list and get.
- *  The get command accepts the path to a file and sends the file's size and its content.
- *  The list command accepts the path to a directory and sends the amount of Files in it, as well as a list of names,
- *  and a boolean parameter that says whether a given File is a directory.
+ * Class responsible for running a server that can execute the commands list and get.
+ * The get command accepts the path to a file and sends the file's size and its content.
+ * The list command accepts the path to a directory and sends the amount of Files in it, as well as a list of names,
+ * and a boolean parameter that says whether a given File is a directory.
  */
 public class Server {
     private final @NotNull Selector acceptSelector;
@@ -87,7 +87,7 @@ public class Server {
 
     /**
      * Creates and starts a server with the given address on the given port number.
-     * @param address the address for the server.
+     * @param address    the address for the server.
      * @param portNumber the port number for the server.
      * @throws IOException if server could not be created.
      */
@@ -162,7 +162,7 @@ public class Server {
             while (iterator.hasNext()) {
                 SelectionKey key = iterator.next();
                 if (key.isAcceptable()) {
-                    var socketChannel = ((ServerSocketChannel)key.channel()).accept();
+                    var socketChannel = ((ServerSocketChannel) key.channel()).accept();
                     socketChannel.configureBlocking(false);
                     socketChannel.register(readSelector, SelectionKey.OP_READ, new TransmissionController(socketChannel));
                     readSelector.wakeup();
@@ -188,7 +188,7 @@ public class Server {
                     key.cancel();
                     continue;
                 } else if (key.isReadable()) {
-                    var controller = (TransmissionController)key.attachment();
+                    var controller = (TransmissionController) key.attachment();
                     logger.info("Trying to read from " + controller.channel.getLocalAddress());
                     controller.processRead();
                 } else {
@@ -213,7 +213,7 @@ public class Server {
                     key.cancel();
                     continue;
                 } else if (key.isWritable()) {
-                    var controller = (TransmissionController)key.attachment();
+                    var controller = (TransmissionController) key.attachment();
                     logger.info("Trying to write to " + controller.channel.getLocalAddress());
                     controller.processWrite(key);
                 } else {
@@ -227,13 +227,13 @@ public class Server {
     /**
      * Method that executes a get query and sends the result to the given transmission controller.
      * @param controller the controller to send the response to.
-     * @param pathName the path of the file for which the get query should be executed.
+     * @param pathName   the path of the file for which the get query should be executed.
      */
     private void executeGet(@NotNull TransmissionController controller, @NotNull String pathName) {
         logger.info("Executing get for " + pathName);
         Path path;
         try {
-             path = Paths.get(pathName);
+            path = Paths.get(pathName);
         } catch (InvalidPathException notAFile) {
             logger.info("File " + pathName + " does not exist.");
             controller.addQueryForIncorrectFile();
@@ -258,7 +258,7 @@ public class Server {
     /**
      * Method that executes a list query and sends the result to the given transmission controller.
      * @param controller the controller to send the response to.
-     * @param pathName the path of the file for which the list query should be executed.
+     * @param pathName   the path of the file for which the list query should be executed.
      */
     private void executeList(@NotNull TransmissionController controller, @NotNull String pathName) {
         logger.info("Executing list for " + pathName);
@@ -299,7 +299,7 @@ public class Server {
      */
     private @NotNull byte[] fileToBytes(@NotNull File file) {
         String fileName = file.getName();
-        var isDirectory = new byte[]{(byte)(file.isDirectory() ? 1 : 0)};
+        var isDirectory = new byte[]{(byte) (file.isDirectory() ? 1 : 0)};
         var encodedFile = fileName.getBytes();
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(encodedFile.length), encodedFile), isDirectory);
     }
