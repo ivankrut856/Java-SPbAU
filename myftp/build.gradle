@@ -21,10 +21,8 @@ dependencies {
     compile('org.apache.commons:commons-lang3:3.0')
     compile('com.google.guava:guava:27.1-jre')
     implementation group: 'commons-io', name: 'commons-io', version: '2.6'
-
-
-
 }
+
 test {
     useJUnitPlatform()
     testLogging {
@@ -32,9 +30,24 @@ test {
     }
 }
 
+task client(type:CreateStartScripts) {
+    applicationName = 'client'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClassName = 'fr.ladybug.team.client.ClientInterface'
+    outputDir = file('build/bin')
+}
+
+task server(type:CreateStartScripts) {
+    applicationName = 'server'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClassName = 'fr.ladybug.team.server.Server'
+    outputDir = file('build/bin')
+}
+
+mainClassName = 'fr.ladybug.team.client.ClientInterface'
+
 javafx {
     version = "12"
     modules = [ 'javafx.controls' ]
 }
 
-mainClassName = 'fr.ladybug.team.ClientInterface'

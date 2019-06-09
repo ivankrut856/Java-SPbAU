@@ -11,6 +11,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.StackPane;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,9 +35,13 @@ public class ClientInterface extends Application {
     private ObservableList<FileView> dataSupplier;
     private Client client;
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     /** {@inheritDoc} */
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
         logger.info("Starting the application.");
         TextInputDialog remoteAddressSupplier = new TextInputDialog("ip.ad.dr.re:port");
         remoteAddressSupplier.setTitle("MyFTP");
@@ -100,7 +105,12 @@ public class ClientInterface extends Application {
                     if (currentView == FileView.LOADING) {
                         return;
                     }
-                    client.saveFile(currentView.getFileName(), (message) -> {
+
+                    File saveAs = new FileChooser().showSaveDialog(primaryStage);
+                    if (saveAs == null)
+                        return;
+
+                    client.saveFile(currentView.getFileName(), saveAs, (message) -> {
                         var alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setTitle("File download");
                         alert.setHeaderText("Status");
