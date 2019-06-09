@@ -129,11 +129,12 @@ public class Client {
     }
 
     /**
-     * Saves the file with given filename in current working directory into current working folder in local machine.
+     * Saves the file with given filename in current working directory into specified location in local machine.
      * @param filename the filename of the file which is to be saved.
+     * @param saveAs the local file into which the remote file is to be saved
      * @param onFinishInformer the callback for save finish.
      */
-    public void saveFile(@NotNull String filename, @NotNull Consumer<String> onFinishInformer) {
+    public void saveFile(@NotNull String filename, @NotNull File saveAs, @NotNull Consumer<String> onFinishInformer) {
         byte[] content;
         try {
             var response = ResponseGet.fromBytes(makeQuery(new Query(Query.QueryType.GET,
@@ -152,7 +153,7 @@ public class Client {
         }
 
         try {
-            FileUtils.copyToFile(new ByteArrayInputStream(content), new File(filename));
+            FileUtils.copyToFile(new ByteArrayInputStream(content), saveAs);
         } catch (IOException e) {
             logger.severe("Saving file failed: " + e.getMessage());
             onFinishInformer.accept("Could not save the file.");

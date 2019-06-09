@@ -5,8 +5,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.IOException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -15,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 /** Class for storing and processing the server's response to a list query. */
 public class ResponseList {
     private int directorySize;
-    private @Nullable FileView[] fileViews;
+    private @Nullable List<FileView> fileViews;
 
     private boolean valid = true;
     private @Nullable String errorMessage;
@@ -33,12 +35,12 @@ public class ResponseList {
             } else if (responseList.directorySize == -1) {
                 return errorResponse("Directory does not exist.");
             }
-            responseList.fileViews = new FileView[responseList.directorySize];
+            responseList.fileViews = new ArrayList<FileView>();
             for (int i = 0; i < responseList.directorySize; i++) {
                 int stringSize = stream.readInt();
                 String filename = new String(stream.readNBytes(stringSize));
                 boolean isDirectory = stream.readNBytes(1)[0] == 1;
-                responseList.fileViews[i] = new FileView(filename, isDirectory);
+                responseList.fileViews.add(new FileView(filename, isDirectory));
             }
             return responseList;
         } catch (IOException e) {
@@ -57,7 +59,7 @@ public class ResponseList {
     /** Returns a list of the response's FileViews. */
     public @NotNull List<FileView> toFileViews() {
         checkArgument(fileViews != null); // should only be called from valid ResponseLists.
-        return Arrays.asList(fileViews);
+        return fileViews;
     }
 
     /** Returns true if the response is not erroneous, false otherwise. */
