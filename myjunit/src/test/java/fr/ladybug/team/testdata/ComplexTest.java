@@ -5,18 +5,22 @@ import fr.ladybug.team.annotations.*;
 public class ComplexTest {
 
     @BeforeClass
-    public void sayHello() {
+    public static void sayHello() {
 
     }
 
     @AfterClass
-    public void sayGoodbye() {
+    public static void sayGoodbye() {
 
     }
 
     @Before
-    @After
     public void smallTalk() {
+
+    }
+
+    @After
+    public void smallTalkAgain() {
 
     }
 

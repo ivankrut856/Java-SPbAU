@@ -4,8 +4,10 @@ import fr.ladybug.team.annotations.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 /** Main JUnit class
@@ -32,6 +34,8 @@ public class Tester {
      * 2, The constructor must not throw any throwable
      * 3. Every annotated method must not require arguments to invoke
      * 4. Every annotated method must be public (otherwise it will be ignored)
+     * 5. Methods annotated @BeforeClass and @AfterClass must be static
+     * 6. Methods cannot be annotated with more than one Tester annotation
      * @param testClass the class which is to test
      * @return Tester instance which is ready to test() invocation
      * @throws TestException the exception is thrown if the Class instance doesn't meet the requirements
@@ -53,37 +57,60 @@ public class Tester {
 
         List<Method> methods = Arrays.asList(testClass.getMethods());
         for (var method : methods) {
+            int annotationsFound = 0;
             if (method.isAnnotationPresent(Test.class)) {
                 if (method.getParameterCount() != 0) {
                     throw new TestException("All @Test methods must have no argument to invoke");
                 }
                 instance.testMethods.add(method);
+                annotationsFound++;
             }
             if (method.isAnnotationPresent(AfterClass.class)) {
                 if (method.getParameterCount() != 0) {
                     throw new TestException("All @AfterClass methods must have no argument to invoke");
                 }
+                if (!Modifier.isStatic(method.getModifiers())) {
+                    throw new TestException("All @AfterClass methods must be static");
+                }
                 instance.afterAll.add(method);
+                annotationsFound++;
             }
             if (method.isAnnotationPresent(BeforeClass.class)) {
                 if (method.getParameterCount() != 0) {
                     throw new TestException("All @BeforeClass methods must have no argument to invoke");
                 }
+
+                if (!Modifier.isStatic(method.getModifiers())) {
+                    throw new TestException("All @BeforeClass methods must be static");
+                }
                 instance.beforeAll.add(method);
+                annotationsFound++;
             }
             if (method.isAnnotationPresent(After.class)) {
                 if (method.getParameterCount() != 0) {
                     throw new TestException("All @After methods must have no argument to invoke");
                 }
                 instance.afterEach.add(method);
+                annotationsFound++;
             }
             if (method.isAnnotationPresent(Before.class)) {
                 if (method.getParameterCount() != 0) {
                     throw new TestException("All @Before methods must have no argument to invoke");
                 }
                 instance.beforeEach.add(method);
+                annotationsFound++;
+            }
+
+            if (annotationsFound > 1) {
+                throw new TestException(String.format("Method cannot be annotated with more than one Tester annotation, but found %d", annotationsFound));
             }
         }
+
+        instance.testMethods.sort(Comparator.comparing(Method::getName));
+        instance.afterAll.sort(Comparator.comparing(Method::getName));
+        instance.beforeAll.sort(Comparator.comparing(Method::getName));
+        instance.afterEach.sort(Comparator.comparing(Method::getName));
+        instance.beforeEach.sort(Comparator.comparing(Method::getName));
 
         return instance;
     }
@@ -99,7 +126,7 @@ public class Tester {
 
         for (var method : beforeAll) {
             try {
-                method.invoke(testClassInstance);
+                method.invoke(null);
             } catch (IllegalAccessException e) {
                 System.err.println(String.format("Skipped @BeforeClass %s invocation due to the internal error: %s", method.getName(), e.getMessage()));
             }
@@ -179,7 +206,7 @@ public class Tester {
 
         for (var method : afterAll) {
             try {
-                method.invoke(testClassInstance);
+                method.invoke(null);
             } catch (IllegalAccessException e) {
                 System.err.println(String.format("Skipped @AfterClass %s invocation due to the internal error: %s", method.getName(), e.getMessage()));
             }

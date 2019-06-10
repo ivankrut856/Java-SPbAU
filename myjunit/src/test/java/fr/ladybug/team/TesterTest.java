@@ -80,11 +80,12 @@ class TesterTest {
         var results = assertDoesNotThrow(() -> Tester.fromClass(ComplexTest.class).test());
         assertEquals(5, results.size());
 
-        assertEquals(Tester.TestResult.TestResultState.SUCCESS, results.get(0).getState());
+
+        assertEquals(Tester.TestResult.TestResultState.DISABLED, results.get(0).getState());
         assertEquals(Tester.TestResult.TestResultState.FAILED, results.get(1).getState());
         assertEquals(Tester.TestResult.TestResultState.SUCCESS, results.get(2).getState());
         assertEquals(Tester.TestResult.TestResultState.FAILED, results.get(3).getState());
-        assertEquals(Tester.TestResult.TestResultState.DISABLED, results.get(4).getState());
+        assertEquals(Tester.TestResult.TestResultState.SUCCESS, results.get(4).getState());
     }
 
 }
