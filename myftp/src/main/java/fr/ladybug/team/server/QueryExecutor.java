@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -101,7 +102,7 @@ class QueryExecutor {
     private static @NotNull byte[] fileToBytes(@NotNull File file) {
         String fileName = file.getName();
         var isDirectory = new byte[]{(byte) (file.isDirectory() ? 1 : 0)};
-        var encodedFile = fileName.getBytes();
+        var encodedFile = fileName.getBytes(StandardCharsets.UTF_8);
         return ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(encodedFile.length), encodedFile), isDirectory);
     }
 }
