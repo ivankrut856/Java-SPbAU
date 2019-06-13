@@ -94,7 +94,7 @@ class QueryExecutor {
 
     /**
      * Method that converts information about a file into a byte array according to the server's protocol.
-     * The byte array consists of an integer (the file name's size in bytes), the file name,
+     * The byte array consists of an integer (the file name's size in bytes), the file name (in UTF-8 encoding),
      * and a boolean (is the file a directory), concatenated.
      * @param file the file to serialize.
      * @return a byte array with the information about the given file.

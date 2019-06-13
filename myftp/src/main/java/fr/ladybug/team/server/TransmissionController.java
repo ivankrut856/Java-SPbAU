@@ -119,7 +119,7 @@ class TransmissionController {
 
     /** Class that controls the interaction with incoming data from clients' channel. */
     private class InputTransmission {
-        /** A package size that сould not have been possibly sent.*/
+        /** A package size that could not have been possibly sent.*/
         private final int defaultPackageSize = -1;
 
         private @NotNull ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
