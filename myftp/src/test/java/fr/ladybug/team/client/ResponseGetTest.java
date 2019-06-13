@@ -39,6 +39,6 @@ class ResponseGetTest {
         byte[] toSend = ArrayUtils.addAll(Ints.toByteArray(expected.getBytes(StandardCharsets.UTF_8).length), expected.getBytes(StandardCharsets.UTF_8));
         var response = ResponseGet.fromBytes(toSend);
         assertTrue(response.isValid());
-        assertEquals(expected, new String(response.getFileContent()));
+        assertEquals(expected, new String(response.getFileContent(), StandardCharsets.UTF_8));
     }
 }
