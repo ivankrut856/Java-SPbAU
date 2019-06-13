@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,14 +31,14 @@ class ServerClientInteractionTest {
         var query = client.makeQuery(new Query(Query.QueryType.GET, "src/test/resources/file"));
         var result = ResponseGet.fromBytes(query);
         assertTrue(result.isValid());
-        assertEquals("File content", new String(result.getFileContent()));
+        assertEquals("File content", new String(result.getFileContent(), StandardCharsets.UTF_8));
         client.shutdown();
 
         var secondClient = new Client(ADDRESS, PORT);
         var secondQuery = secondClient.makeQuery(new Query(Query.QueryType.GET, "src/test/resources/dir/file"));
         var secondResult = ResponseGet.fromBytes(secondQuery);
         assertTrue(secondResult.isValid());
-        assertEquals("This is a file", new String(secondResult.getFileContent()));
+        assertEquals("This is a file", new String(secondResult.getFileContent(), StandardCharsets.UTF_8));
     }
 
     @Test

@@ -8,6 +8,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +39,7 @@ public class ResponseList {
             responseList.fileViews = new ArrayList<FileView>();
             for (int i = 0; i < responseList.directorySize; i++) {
                 int stringSize = stream.readInt();
-                String filename = new String(stream.readNBytes(stringSize));
+                String filename = new String(stream.readNBytes(stringSize), StandardCharsets.UTF_8);
                 boolean isDirectory = stream.readNBytes(1)[0] == 1;
                 responseList.fileViews.add(new FileView(filename, isDirectory));
             }

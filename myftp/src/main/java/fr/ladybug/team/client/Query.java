@@ -3,6 +3,7 @@ package fr.ladybug.team.client;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 /** Representation of the query that the client sends to the server. */
@@ -31,7 +32,7 @@ public class Query {
         int packageSize = 0;
 
         packageSize += Integer.BYTES;
-        var bytes = queryBody.getBytes();
+        var bytes = queryBody.getBytes(StandardCharsets.UTF_8);
         packageSize += bytes.length;
 
         var stream = new DataOutputStream(outputStream);

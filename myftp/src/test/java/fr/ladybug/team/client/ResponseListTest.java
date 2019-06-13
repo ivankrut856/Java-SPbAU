@@ -4,6 +4,8 @@ import com.google.common.primitives.Ints;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ResponseListTest {
@@ -35,7 +37,7 @@ class ResponseListTest {
     void testSucceededList() {
         String expected = "ok";
         byte[] toSend = ArrayUtils.addAll(ArrayUtils.addAll(Ints.toByteArray(1),
-                ArrayUtils.addAll(Ints.toByteArray(expected.getBytes().length), expected.getBytes())), new byte[]{0});
+                ArrayUtils.addAll(Ints.toByteArray(expected.getBytes(StandardCharsets.UTF_8).length), expected.getBytes(StandardCharsets.UTF_8))), new byte[]{0});
         var response = ResponseList.fromBytes(toSend);
         assertTrue(response.isValid());
         var view = response.toFileViews();

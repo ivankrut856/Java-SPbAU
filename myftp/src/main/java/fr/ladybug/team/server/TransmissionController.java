@@ -12,6 +12,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
@@ -86,7 +87,7 @@ class TransmissionController {
             }
             inputTransmission.finalizeRead();
             int queryType = inputTransmission.queryTypeBuffer.getInt();
-            String query = new String(inputTransmission.receivedData.array());
+            String query = new String(inputTransmission.receivedData.array(), StandardCharsets.UTF_8);
             if (queryType == Query.QueryType.GET.value()) {
                 threadPool.submit(() -> QueryExecutor.executeGet(this, query));
             } else if (queryType == Query.QueryType.LIST.value()) {
@@ -118,7 +119,9 @@ class TransmissionController {
 
     /** Class that controls the interaction with incoming data from clients' channel. */
     private class InputTransmission {
-        private final int defaultPackageSize = -1; // a package size that сould not have been possibly sent.
+        /** A package size that сould not have been possibly sent.*/
+        private final int defaultPackageSize = -1;
+
         private @NotNull ByteBuffer packageSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
         private @NotNull ByteBuffer queryTypeBuffer = ByteBuffer.allocate(Integer.BYTES);
         private @NotNull ByteBuffer receivedData = ByteBuffer.allocate(0);
